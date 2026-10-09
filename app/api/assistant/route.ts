@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { answerQuestion, getOrCreateSession } from "@/lib/assistant";
+import { aiAllowed } from "@/lib/rate-limit";
 
 const COOKIE = "lb_ai";
 const MAX_LEN = 1000;
@@ -23,6 +24,21 @@ export async function POST(req: Request) {
 
   const store = await cookies();
   const session = await getOrCreateSession(store.get(COOKIE)?.value);
+
+  if (!(await aiAllowed(session.sessionToken))) {
+    const res = NextResponse.json(
+      { error: "You're sending questions a bit fast. Please wait a moment." },
+      { status: 429 },
+    );
+    res.cookies.set(COOKIE, session.sessionToken, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30,
+    });
+    return res;
+  }
 
   const replies = await answerQuestion(session, message);
 

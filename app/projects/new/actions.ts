@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth/session";
 import { CATEGORY_LABELS, DOMAIN_LABELS } from "@/lib/constants";
 import { submitProjectForReview } from "@/lib/lifecycle";
+import { formAllowed } from "@/lib/rate-limit";
 
 export type FormState = { error?: string };
 
@@ -22,6 +23,9 @@ export async function saveProjectAction(
   formData: FormData,
 ): Promise<FormState> {
   const user = await requireRole("STUDENT");
+  if (!(await formAllowed())) {
+    return { error: "You're doing that too fast — please wait a moment." };
+  }
   const profile = await prisma.studentProfile.findUnique({
     where: { userId: user.id },
   });

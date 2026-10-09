@@ -107,9 +107,16 @@ Design canvas holds the exact screens.
   the monthly-cap "temporarily unavailable" path is in place.
   **Needs `GEMINI_API_KEY` + pgvector** to answer live.
 
-Still to come (spec build order): rate limits + the monthly-cost cap, the audit
-log / super-admin access to AI logs, and super-admin management of
-admins/students.
+- **Milestone 12 — rate limits + the monthly AI cap:** a fixed-window limiter
+  (`lib/rate-limit.ts`, atomic upsert on a new `rate_limits` table, fails open)
+  with all numbers in config (`lib/limits.ts` / env). AI questions are limited
+  per session and per IP, per minute and per day; form posts and link
+  submissions per IP per minute; sign-in per IP and per email. The monthly AI
+  spend cap (`lib/ai-budget.ts`) already gates the assistant into a
+  "temporarily unavailable" reply.
+
+Still to come (spec build order): logging + the audit log + super-admin access
+to AI logs, and super-admin management of admins/students; then deploy.
 
 ### Design vs. tech-doc decisions (milestone 4)
 

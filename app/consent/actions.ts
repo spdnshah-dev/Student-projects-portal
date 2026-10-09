@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth/session";
+import { formAllowed } from "@/lib/rate-limit";
 
 export type FormState = { error?: string };
 
@@ -16,6 +17,9 @@ export async function acceptConsentAction(
   formData: FormData,
 ): Promise<FormState> {
   const user = await requireRole("STUDENT");
+  if (!(await formAllowed())) {
+    return { error: "You're doing that too fast — please wait a moment." };
+  }
 
   const agree1 = formData.get("agree1") != null;
   const agree2 = formData.get("agree2") != null;

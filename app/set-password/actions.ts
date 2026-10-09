@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth/password";
 import { createSession } from "@/lib/auth/session";
 import { roleHome } from "@/lib/auth/roles";
+import { formAllowed } from "@/lib/rate-limit";
 
 export type FormState = { error?: string };
 
@@ -27,6 +28,9 @@ export async function setPasswordAction(
   if (!email) return { error: "Enter your email address." };
   if (password.length < 8) {
     return { error: "Use at least 8 characters for your password." };
+  }
+  if (!(await formAllowed())) {
+    return { error: "You're doing that too fast — please wait a moment." };
   }
 
   const user = await prisma.user.findUnique({ where: { email } });

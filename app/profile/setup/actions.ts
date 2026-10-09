@@ -8,9 +8,12 @@ import { requireRole } from "@/lib/auth/session";
 import { onProfileEdited } from "@/lib/lifecycle";
 import { processCertificateFile } from "@/lib/certificates";
 import { deleteObject, StorageNotConfiguredError } from "@/lib/storage";
+import { formAllowed } from "@/lib/rate-limit";
 import { COURSE_COMPLETED_LABELS, DOMAIN_LABELS } from "@/lib/constants";
 
 export type FormState = { error?: string; ok?: boolean };
+
+const TOO_FAST = "You're doing that too fast — please wait a moment.";
 
 function asEnum<T extends string>(
   value: FormDataEntryValue | null,
@@ -25,6 +28,7 @@ export async function saveProfileAction(
   formData: FormData,
 ): Promise<FormState> {
   const user = await requireRole("STUDENT");
+  if (!(await formAllowed())) return { error: TOO_FAST };
   const profile = await prisma.studentProfile.findUnique({
     where: { userId: user.id },
   });
@@ -96,6 +100,7 @@ export async function addCertificateAction(
   formData: FormData,
 ): Promise<FormState> {
   const user = await requireRole("STUDENT");
+  if (!(await formAllowed())) return { error: TOO_FAST };
   const profile = await prisma.studentProfile.findUnique({
     where: { userId: user.id },
   });

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/auth/password";
 import { createSession } from "@/lib/auth/session";
 import { roleHome } from "@/lib/auth/roles";
+import { loginAllowed } from "@/lib/rate-limit";
 
 // Email + password sign-in, shared by students, admins, and the super admin.
 // Permission is enforced server-side; the response only tells the client where
@@ -24,6 +25,13 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { error: "Enter your email and password." },
       { status: 400 },
+    );
+  }
+
+  if (!(await loginAllowed(email))) {
+    return NextResponse.json(
+      { error: "Too many sign-in attempts. Please wait a minute and try again." },
+      { status: 429 },
     );
   }
 

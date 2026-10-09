@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPublicProject } from "@/lib/public";
 import { recordProjectLinkCheck } from "@/lib/link-check-run";
+import { checkAllowed } from "@/lib/rate-limit";
 
 // Called by the Open-project popup: checks the project's live link (SSRF-safe),
 // records the result, updates the project's link-health flags, and returns
@@ -11,6 +12,13 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+
+  if (!(await checkAllowed())) {
+    return NextResponse.json(
+      { ok: false, error: "Too many checks. Please wait a moment." },
+      { status: 429 },
+    );
+  }
 
   const project = await getPublicProject(id);
   if (!project) {
