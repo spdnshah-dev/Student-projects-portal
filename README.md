@@ -124,8 +124,17 @@ Design canvas holds the exact screens.
   view) readable only by the super admin. Review actions already write audit
   rows (milestone 5).
 
-Still to come (spec build order): deploy to the Vercel test environment; then
-the parked items (real consent form, email notifications, AWS move).
+- **Milestone 14 — deploy readiness:** the app is ready for the Vercel test
+  environment. `vercel-build` runs `prisma generate && prisma migrate deploy &&
+  next build`; `postinstall` generates the client; `GET /api/health` reports DB
+  + integration status. **`DEPLOYMENT.md`** is the step-by-step runbook (Neon +
+  pgvector, env vars, seed, `/api/admin/reindex`, the always-on worker, and a
+  smoke test). The actual deploy runs against your Vercel/Neon/Blob/Gemini
+  accounts.
+
+Parked for later (out of scope for the first build): the real, lawyer-reviewed
+consent form; email notifications (set-password code, review outcomes,
+link-problem alerts); and the move to AWS.
 
 ### Design vs. tech-doc decisions (milestone 4)
 
