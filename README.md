@@ -56,8 +56,17 @@ Design canvas holds the exact screens.
   **take-down** control for live projects, and the **students** list. Every
   action is server-checked (admin + super admin) and drives the milestone-5
   state machine. Link problems is a stub until the link-checker milestone.
+- **Milestone 7 — the public portal (no login):** Home (`/`) with the live
+  published-projects grid and Category / Domain / keyword / sort filters; the
+  Students list (`/students`); public profiles (`/students/[id]`); and project
+  detail pages (`/projects/[id]`) with the Learnbay bar, a Share button, the
+  visitor-facing hero, and "more by this student". All reads go through
+  `lib/public.ts`, which enforces the visibility rules (only PUBLISHED items
+  whose profile is Live and account active). "Open project" opens the live URL
+  in a new tab for now — the loading popup is the next milestone. View
+  counts / likes aren't shown (no analytics data model yet).
 
-Still to come (spec build order): the public portal, the Open-project flow,
+Still to come (spec build order): the Open-project flow (loading popup),
 certificate uploads, the SSRF-safe link checker, the AI assistant, rate limits,
 logging, and super-admin management of admins/students.
 
