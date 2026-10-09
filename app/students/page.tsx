@@ -3,6 +3,7 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/brand/SiteHeader";
 import { SiteFooter } from "@/components/brand/SiteFooter";
 import { AudienceToggle } from "@/components/public/AudienceToggle";
+import { AssistantWidget } from "@/components/public/AssistantWidget";
 import { initials, avatarClasses } from "@/lib/initials";
 import { DOMAIN_LABELS } from "@/lib/constants";
 import { getLiveProfiles } from "@/lib/public";
@@ -89,6 +90,7 @@ export default async function StudentsPage() {
       </main>
 
       <SiteFooter />
+      <AssistantWidget />
     </div>
   );
 }

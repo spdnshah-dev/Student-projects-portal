@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/brand/SiteFooter";
 import { OpenProjectDialog } from "@/components/public/OpenProjectDialog";
 import { ShareButton } from "@/components/public/ShareButton";
+import { AssistantWidget } from "@/components/public/AssistantWidget";
 import { initials, avatarClasses } from "@/lib/initials";
 import {
   CATEGORY_LABELS,
@@ -182,6 +183,7 @@ export default async function PublicProjectPage({
       </main>
 
       <SiteFooter />
+      <AssistantWidget />
     </div>
   );
 }

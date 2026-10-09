@@ -4,6 +4,7 @@ import { SiteFooter } from "@/components/brand/SiteFooter";
 import { AudienceToggle } from "@/components/public/AudienceToggle";
 import { FilterBar } from "@/components/public/FilterBar";
 import { ProjectCard } from "@/components/public/ProjectCard";
+import { AssistantWidget } from "@/components/public/AssistantWidget";
 import { CATEGORY_LABELS, DOMAIN_LABELS } from "@/lib/constants";
 import {
   countPublishedProjects,
@@ -93,6 +94,7 @@ export default async function HomePage({
       </main>
 
       <SiteFooter />
+      <AssistantWidget />
     </div>
   );
 }

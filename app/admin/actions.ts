@@ -11,6 +11,17 @@ import {
   takeDownProject,
 } from "@/lib/lifecycle";
 import { LifecycleError } from "@/lib/lifecycle-rules";
+import { reindexProfile, reindexProject, removeSource } from "@/lib/embeddings";
+
+// Index updates are best-effort: a Gemini/DB hiccup must never undo or block a
+// review decision that already committed. The daily rebuild re-syncs anyway.
+async function safeIndex(fn: () => Promise<void>) {
+  try {
+    await fn();
+  } catch (e) {
+    console.error("[assistant index] update failed:", e);
+  }
+}
 
 export type ActionResult = { ok: true } | { error: string };
 
@@ -29,6 +40,7 @@ export async function approveProjectAction(id: string): Promise<ActionResult> {
   const admin = await requireRole(ADMIN_ROLES);
   try {
     await approveProject(id, admin.id);
+    await safeIndex(() => reindexProject(id));
     revalidateAdmin();
     return { ok: true };
   } catch (e) {
@@ -58,6 +70,7 @@ export async function takeDownProjectAction(
   const admin = await requireRole(ADMIN_ROLES);
   try {
     await takeDownProject(id, admin.id, note?.trim() || undefined);
+    await safeIndex(() => removeSource("PROJECT", id));
     revalidateAdmin();
     return { ok: true };
   } catch (e) {
@@ -69,6 +82,7 @@ export async function approveProfileAction(id: string): Promise<ActionResult> {
   const admin = await requireRole(ADMIN_ROLES);
   try {
     await approveProfile(id, admin.id);
+    await safeIndex(() => reindexProfile(id));
     revalidateAdmin();
     return { ok: true };
   } catch (e) {

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/brand/SiteHeader";
 import { SiteFooter } from "@/components/brand/SiteFooter";
 import { ProjectCard } from "@/components/public/ProjectCard";
+import { AssistantWidget } from "@/components/public/AssistantWidget";
 import { initials, avatarClasses } from "@/lib/initials";
 import { COURSE_COMPLETED_LABELS, DOMAIN_LABELS } from "@/lib/constants";
 import { getPublicProfile } from "@/lib/public";
@@ -153,6 +154,7 @@ export default async function PublicProfilePage({
       </main>
 
       <SiteFooter />
+      <AssistantWidget />
     </div>
   );
 }

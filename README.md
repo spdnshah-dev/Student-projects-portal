@@ -94,8 +94,22 @@ Design canvas holds the exact screens.
   screen (`/admin/links`) is now real; the student Dashboard's Link-problems tab
   reads the same data. Run the worker with `npm run worker:link-check`.
 
-Still to come (spec build order): the AI assistant, rate limits, logging, and
-super-admin management of admins/students.
+- **Milestone 11 — the AI assistant:** a public "Ask AI" chat
+  (`AssistantWidget`) on every visitor page. `lib/gemini.ts` (REST, no SDK) does
+  embeddings + answers; `lib/embeddings.ts` chunks and stores vectors in
+  pgvector and retrieves nearest chunks, re-indexing on approval and removing on
+  take-down (`POST /api/admin/reindex` rebuilds all). `lib/assistant.ts` runs
+  RAG with hard guardrails — answers only from indexed content + the one
+  homepage link, treats retrieved student text as data (never instructions),
+  refuses to rank/judge candidates, read-only — and after two answers asks
+  whether the visitor is a recruiter or a learner (learner → skill-gap test on
+  the homepage). Every session is logged to the DB and a per-session text file;
+  the monthly-cap "temporarily unavailable" path is in place.
+  **Needs `GEMINI_API_KEY` + pgvector** to answer live.
+
+Still to come (spec build order): rate limits + the monthly-cost cap, the audit
+log / super-admin access to AI logs, and super-admin management of
+admins/students.
 
 ### Design vs. tech-doc decisions (milestone 4)
 
