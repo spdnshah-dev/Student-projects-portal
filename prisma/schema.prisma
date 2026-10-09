@@ -162,6 +162,11 @@ model StudentProfile {
   headline        String?
   about           String?
   courseCompleted CourseCompleted? @map("course_completed")
+  yearsExperience Int?             @map("years_experience")
+  domain          Domain? // the domain the student works in (profile-level)
+  linkedinUrl     String?          @map("linkedin_url")
+  photoKey        String?          @map("photo_key") // storage key for the profile photo
+  consentAt       DateTime?        @map("consent_at") // placeholder consent accepted
   state           ItemState        @default(DRAFT)
 
   // The version the public currently sees (null until first approved).
@@ -265,8 +270,12 @@ model Certificate {
   id         String   @id @default(cuid())
   profileId  String   @map("profile_id")
   profile    StudentProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  fileKey    String   @map("file_key") // random storage key, never the student's name
-  fileName   String   @map("file_name") // original display name
+  name       String // display name, e.g. "Data Science Program"
+  issuer     String?  // who issued it, e.g. "Learnbay"
+  // File is attached at the certificate-upload milestone (safeguarded upload),
+  // so these are null until then.
+  fileKey    String?  @map("file_key") // random storage key, never the student's name
+  fileName   String?  @map("file_name") // original display name
   uploadedAt DateTime @default(now()) @map("uploaded_at")
 
   @@index([profileId])

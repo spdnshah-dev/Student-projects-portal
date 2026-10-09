@@ -34,11 +34,33 @@ Design canvas holds the exact screens.
   (`requireUser` / `requireRole`) protecting `/dashboard`, `/admin`, `/super`,
   and a fixed-password seed (`prisma/seed.ts`) creating the super admin, a test
   admin, and sample students with published profiles/projects.
+- **Milestone 4 — student flow:** set password (`/set-password`, email code
+  skipped in the test phase), the placeholder consent step (`/consent`),
+  profile setup (`/profile/setup`), add a project (`/projects/new`), and the
+  student dashboard (`/dashboard`) with Overview and Link-problems tabs. Forms
+  save via server actions with server-side auth; submitting a project snapshots
+  it into a version and moves it to In review.
 
-Still to come (spec build order): the student flow (set password, consent,
-profile setup, add project, dashboard), the state machine, the admin flow, the
-public portal, the Open-project flow, certificate uploads, the SSRF-safe link
-checker, the AI assistant, rate limits, and logging.
+Still to come (spec build order): the state machine (full transitions + admin
+approval), the admin flow, the public portal, the Open-project flow, certificate
+uploads, the SSRF-safe link checker, the AI assistant, rate limits, and logging.
+
+### Design vs. tech-doc decisions (milestone 4)
+
+The frozen design and the tech doc (source of truth) differ in a few places;
+resolved with the product owner:
+
+- **Added** profile fields the design shows but the doc's table omits: years of
+  experience, work domain, LinkedIn, profile photo (upload later), and
+  certificate name + issuer. Also kept the doc's `headline` / `about`.
+- **Project domain:** the doc says domain is per-project, so Add Project has a
+  domain selector even though that board omits one.
+- **AI assistant files:** followed the doc — one site-wide assistant reading
+  profile/project/certificate text, so the design's per-project "assistant
+  file" uploads and per-project chatbot are not built.
+- **Deferred:** profile photo + certificate image uploads (file-upload
+  milestone), live-link "Test" button (link-checker milestone), and the
+  dashboard view-analytics / "who viewed" charts (no data model yet).
 
 ### Test accounts (after `npm run db:seed`)
 
