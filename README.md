@@ -115,8 +115,17 @@ Design canvas holds the exact screens.
   spend cap (`lib/ai-budget.ts`) already gates the assistant into a
   "temporarily unavailable" reply.
 
-Still to come (spec build order): logging + the audit log + super-admin access
-to AI logs, and super-admin management of admins/students; then deploy.
+- **Milestone 13 — logging, audit log, and super-admin controls:** the
+  super-admin area under `/super` — an overview with **recent audit activity**,
+  **Admins & students** management (`/super/people`: add by email, disable /
+  re-enable; the super-admin account is protected; account changes write to the
+  audit log and a disabled student's work drops out of public via the
+  visibility rules), and **AI conversation logs** (`/super/ai-logs` + transcript
+  view) readable only by the super admin. Review actions already write audit
+  rows (milestone 5).
+
+Still to come (spec build order): deploy to the Vercel test environment; then
+the parked items (real consent form, email notifications, AWS move).
 
 ### Design vs. tech-doc decisions (milestone 4)
 
