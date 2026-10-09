@@ -245,13 +245,16 @@ async function seedStudent(
 }
 
 async function main() {
+  // Only seeds when the test-mode flag is on. In real production (flag unset)
+  // it skips cleanly so it can safely sit in the build command for both phases.
   if (
     process.env.NODE_ENV === "production" &&
     process.env.FIXED_PASSWORD_TEST_MODE !== "true"
   ) {
-    throw new Error(
-      "Refusing to run the fixed-password seed in production. Set FIXED_PASSWORD_TEST_MODE=true only in the test phase.",
+    console.log(
+      "Skipping fixed-password seed (FIXED_PASSWORD_TEST_MODE is not 'true').",
     );
+    return;
   }
 
   const passwordHash = await hashPassword(TEST_PASSWORD);
