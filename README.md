@@ -7,6 +7,15 @@ candidates; prospective learners browse it to see what they would build.
 The **technical build specification** is the single source of truth; the Claude
 Design canvas holds the exact screens.
 
+## Deploy
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fspdnshah-dev%2FStudent-projects-portal&env=AUTH_SECRET,FIXED_PASSWORD_TEST_MODE,GEMINI_API_KEY&envDescription=AUTH_SECRET%3A%20run%20openssl%20rand%20-base64%2032.%20FIXED_PASSWORD_TEST_MODE%3Dtrue%20for%20the%20test%20phase.%20GEMINI_API_KEY%20is%20optional%20(assistant%20only).&envLink=https%3A%2F%2Fgithub.com%2Fspdnshah-dev%2FStudent-projects-portal%2Fblob%2Fmain%2F.env.example&project-name=learnbay-projects&repository-name=student-projects-portal)
+
+After importing, add a **Postgres (with pgvector)** and a **Blob** store from
+the project's **Storage** tab (these set `DATABASE_URL`, `DIRECT_URL`, and
+`BLOB_READ_WRITE_TOKEN`), then follow **[`DEPLOYMENT.md`](./DEPLOYMENT.md)** for
+the migrate → seed → reindex → worker steps.
+
 ## Stack
 
 | Piece                        | Role                                                        |
