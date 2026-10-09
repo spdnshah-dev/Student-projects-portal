@@ -15,7 +15,9 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "link-check:once": "tsx -e \"import('./lib/link-check-run').then(m=>m.runLinkChecksOnce()).then(s=>console.log(s))\"",
+    "worker:link-check": "tsx worker/link-check.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

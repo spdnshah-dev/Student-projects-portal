@@ -83,9 +83,19 @@ Design canvas holds the exact screens.
   review. **Needs `BLOB_READ_WRITE_TOKEN`** to actually store files; malware
   scanning uses `CLAMAV_SCAN_URL` (or GuardDuty in prod).
 
-Still to come (spec build order): the full SSRF-safe link checker + daily
-worker, the AI assistant, rate limits, logging, and super-admin management of
-admins/students.
+- **Milestone 10 — SSRF-safe link checker + daily worker + link problems:**
+  `lib/ssrf.ts` now resolves the hostname, rejects any resolved private/reserved
+  IP (v4 and v6) and the metadata address, and **pins the connection to the
+  validated IP** (no DNS rebinding), https-only, no redirect-follow, timeout,
+  body never read. `lib/link-check-run.ts` records a check + updates a project's
+  link flags, shared by the popup endpoint and `worker/link-check.ts` — an
+  always-on worker that sweeps every published link on a schedule
+  (`LINK_CHECK_INTERVAL_HOURS`, default 24), spread out. The admin Link-problems
+  screen (`/admin/links`) is now real; the student Dashboard's Link-problems tab
+  reads the same data. Run the worker with `npm run worker:link-check`.
+
+Still to come (spec build order): the AI assistant, rate limits, logging, and
+super-admin management of admins/students.
 
 ### Design vs. tech-doc decisions (milestone 4)
 
