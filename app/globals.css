@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-surface-canvas text-brand-ink antialiased;
+    font-family:
+      var(--font-instrument-sans), "Instrument Sans", "Segoe UI", system-ui,
+      sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  /* Form text at 16px on mobile so iPhones do not zoom (design note). */
+  @media (max-width: 640px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px;
+    }
+  }
+
+  /* Visible keyboard focus everywhere, for accessibility. */
+  :focus-visible {
+    outline: 2px solid theme("colors.brand.accent");
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Screen-reader-only utility (used for accessible labels on icon buttons). */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}

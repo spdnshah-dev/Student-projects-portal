@@ -1,0 +1,46 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+
+# production
+/build
+
+# testing
+/coverage
+
+# misc
+.DS_Store
+*.pem
+
+# debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (never commit secrets)
+.env
+.env*.local
+.env.production
+
+# prisma
+/prisma/*.db
+/prisma/*.db-journal
+
+# vercel / build tooling
+.vercel
+*.tsbuildinfo
+
+# editor
+.idea
+.vscode/*
+!.vscode/extensions.json
+
+# AI assistant session logs (per-session text files; super-admin only)
+/logs/ai-sessions/

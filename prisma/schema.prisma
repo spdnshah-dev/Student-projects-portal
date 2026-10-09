@@ -1,0 +1,368 @@
+// Learnbay Projects — data model.
+// Single source of truth for the database. Column/field names follow the tech
+// spec's data-model table; types are made exact here. Every table has an id and
+// created/updated timestamps where useful.
+//
+// pgvector: the assistant's search vectors live in this same PostgreSQL via the
+// `vector` extension, so there is no separate vector service to run.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [vector]
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+// Visitors have no account, so they are not a Role here.
+enum Role {
+  STUDENT
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+// The shared lifecycle for both projects and profiles (6 states). Only
+// PUBLISHED is public; a profile's PUBLISHED state is labelled "Live" in the UI.
+enum ItemState {
+  DRAFT // hidden — being created
+  IN_REVIEW // hidden — submitted, waiting for an admin
+  PUBLISHED // public (profile: "Live")
+  CHANGES_NEEDED // hidden — admin sent it back with a note
+  CHANGES_IN_REVIEW // hidden — a published item was edited; old version stays live
+  UNPUBLISHED // hidden — taken down, or the student was disabled
+}
+
+// Review status of a single submitted version snapshot.
+enum ReviewState {
+  PENDING
+  APPROVED
+  SENT_BACK
+}
+
+enum ReviewTargetType {
+  PROFILE
+  PROJECT
+}
+
+enum ReviewAction {
+  APPROVE
+  SEND_BACK
+  TAKE_DOWN
+  RESTORE
+}
+
+// Fixed dropdown lists (frozen for the first build). Display labels live in
+// lib/constants.ts; the DB stores these stable identifiers.
+enum Category {
+  ANALYTICS
+  SOFTWARE_DEVELOPMENT
+  CLOUD_AND_DEVOPS
+  GENERATIVE_AI
+  AGENTIC_AI
+}
+
+enum CourseCompleted {
+  DATA_SCIENCE
+  BUSINESS_ANALYTICS_AND_DATA_ANALYTICS
+  CLOUD_AND_DEVOPS
+  GENERATIVE_AI_AND_AGENTIC_AI
+  SOFTWARE_DEVELOPMENT
+}
+
+enum Domain {
+  BFSI
+  ADMINISTRATIVE
+  ARTS_AND_DESIGN
+  BUSINESS_DEVELOPMENT
+  COMMUNITY_AND_SOCIAL_SERVICES
+  CONSULTING
+  EDUCATION
+  ENGINEERING
+  ENTREPRENEURSHIP
+  HEALTHCARE_SERVICES
+  HUMAN_RESOURCES
+  INFORMATION_TECHNOLOGY
+  LEGAL
+  MARKETING
+  MEDIA_AND_COMMUNICATION
+  OPERATIONS
+  PRODUCT_MANAGEMENT
+  PROGRAM_AND_PROJECT_MANAGEMENT
+  PURCHASING
+  QUALITY_ASSURANCE
+  RESEARCH
+  SALES
+  CUSTOMER_SUCCESS_AND_SUPPORT
+}
+
+enum VisitorType {
+  UNKNOWN
+  RECRUITER
+  LEARNER
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
+}
+
+enum EmbeddingSourceType {
+  PROFILE
+  PROJECT
+  CERTIFICATE
+}
+
+// ---------------------------------------------------------------------------
+// Accounts
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  role         Role
+  passwordHash String?    @map("password_hash")
+  name         String?
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  // A user has at most one student profile; admins/super admin have none.
+  profile StudentProfile?
+
+  // Admin activity (back-relations).
+  reviews                 Review[]
+  reviewedProfileVersions ProfileVersion[] @relation("ReviewedProfileVersions")
+  reviewedProjectVersions ProjectVersion[] @relation("ReviewedProjectVersions")
+  auditLogs               AuditLog[]
+
+  @@map("users")
+}
+
+// ---------------------------------------------------------------------------
+// Profiles & projects
+// ---------------------------------------------------------------------------
+
+model StudentProfile {
+  id              String           @id @default(cuid())
+  userId          String           @unique @map("user_id")
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  headline        String?
+  about           String?
+  courseCompleted CourseCompleted? @map("course_completed")
+  state           ItemState        @default(DRAFT)
+
+  // The version the public currently sees (null until first approved).
+  approvedVersionId String?         @unique @map("approved_version_id")
+  approvedVersion   ProfileVersion? @relation("ApprovedProfileVersion", fields: [approvedVersionId], references: [id], onDelete: SetNull)
+
+  projects     Project[]
+  certificates Certificate[]
+  versions     ProfileVersion[] @relation("ProfileVersions")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([state])
+  @@map("student_profiles")
+}
+
+model Project {
+  id          String    @id @default(cuid())
+  profileId   String    @map("profile_id")
+  profile     StudentProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  category    Category
+  toolsText   String    @map("tools_text") // free text the student types
+  domain      Domain
+  liveUrl     String    @map("live_url")
+  state       ItemState @default(DRAFT)
+
+  // Link-health flag (separate from state — a broken link never hides a project).
+  linkOk            Boolean?  @map("link_ok")
+  linkLastCheckedAt DateTime? @map("link_last_checked_at")
+  linkLastWorkedAt  DateTime? @map("link_last_worked_at")
+
+  approvedVersionId String?         @unique @map("approved_version_id")
+  approvedVersion   ProjectVersion? @relation("ApprovedProjectVersion", fields: [approvedVersionId], references: [id], onDelete: SetNull)
+
+  versions   ProjectVersion[] @relation("ProjectVersions")
+  linkChecks LinkCheck[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([profileId])
+  @@index([state])
+  @@index([category])
+  @@index([domain])
+  @@map("projects")
+}
+
+// ---------------------------------------------------------------------------
+// Version snapshots (taken at submit time)
+// ---------------------------------------------------------------------------
+
+model ProfileVersion {
+  id          String      @id @default(cuid())
+  profileId   String      @map("profile_id")
+  profile     StudentProfile @relation("ProfileVersions", fields: [profileId], references: [id], onDelete: Cascade)
+  snapshot    Json // frozen copy of the profile fields at submit time
+  submittedAt DateTime    @default(now()) @map("submitted_at")
+  reviewState ReviewState @default(PENDING) @map("review_state")
+  reviewedById String?    @map("reviewed_by")
+  reviewedBy   User?      @relation("ReviewedProfileVersions", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewNote  String?     @map("review_note")
+
+  // Set when this version is the one currently live for its profile.
+  approvedFor StudentProfile? @relation("ApprovedProfileVersion")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([profileId])
+  @@index([reviewState])
+  @@map("profile_versions")
+}
+
+model ProjectVersion {
+  id          String      @id @default(cuid())
+  projectId   String      @map("project_id")
+  project     Project     @relation("ProjectVersions", fields: [projectId], references: [id], onDelete: Cascade)
+  snapshot    Json
+  submittedAt DateTime    @default(now()) @map("submitted_at")
+  reviewState ReviewState @default(PENDING) @map("review_state")
+  reviewedById String?    @map("reviewed_by")
+  reviewedBy   User?      @relation("ReviewedProjectVersions", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewNote  String?     @map("review_note")
+
+  approvedFor Project? @relation("ApprovedProjectVersion")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([projectId])
+  @@index([reviewState])
+  @@map("project_versions")
+}
+
+// ---------------------------------------------------------------------------
+// Certificates
+// ---------------------------------------------------------------------------
+
+model Certificate {
+  id         String   @id @default(cuid())
+  profileId  String   @map("profile_id")
+  profile    StudentProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  fileKey    String   @map("file_key") // random storage key, never the student's name
+  fileName   String   @map("file_name") // original display name
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+
+  @@index([profileId])
+  @@map("certificates")
+}
+
+// ---------------------------------------------------------------------------
+// Reviews & audit
+// ---------------------------------------------------------------------------
+
+model Review {
+  id         String           @id @default(cuid())
+  targetType ReviewTargetType @map("target_type")
+  targetId   String           @map("target_id")
+  adminId    String           @map("admin_id")
+  admin      User             @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action     ReviewAction
+  note       String?
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  @@index([targetType, targetId])
+  @@index([adminId])
+  @@map("reviews")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?  @map("actor_id")
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action    String
+  target    String?
+  detail    Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([actorId])
+  @@index([action])
+  @@map("audit_log")
+}
+
+// ---------------------------------------------------------------------------
+// Link checks
+// ---------------------------------------------------------------------------
+
+model LinkCheck {
+  id         String   @id @default(cuid())
+  projectId  String   @map("project_id")
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  checkedAt  DateTime @default(now()) @map("checked_at")
+  ok         Boolean
+  httpStatus Int?     @map("http_status")
+  error      String?
+  responseMs Int?     @map("response_ms")
+
+  @@index([projectId, checkedAt])
+  @@map("link_checks")
+}
+
+// ---------------------------------------------------------------------------
+// AI assistant
+// ---------------------------------------------------------------------------
+
+model AiSession {
+  id           String      @id @default(cuid())
+  sessionToken String      @unique @map("session_token")
+  visitorType  VisitorType @default(UNKNOWN) @map("visitor_type")
+  startedAt    DateTime    @default(now()) @map("started_at")
+  endedAt      DateTime?   @map("ended_at")
+  messageCount Int         @default(0) @map("message_count")
+
+  messages AiMessage[]
+
+  @@map("ai_sessions")
+}
+
+model AiMessage {
+  id        String    @id @default(cuid())
+  sessionId String    @map("session_id")
+  session   AiSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      ChatRole
+  text      String
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([sessionId])
+  @@map("ai_messages")
+}
+
+model Embedding {
+  id         String              @id @default(cuid())
+  sourceType EmbeddingSourceType @map("source_type")
+  sourceId   String              @map("source_id")
+  chunkText  String              @map("chunk_text")
+  // pgvector column. Dimension matches the Gemini embedding model
+  // (text-embedding-004 = 768). Queried via raw SQL in the AI pipeline.
+  embedding  Unsupported("vector(768)")?
+  createdAt  DateTime            @default(now()) @map("created_at")
+
+  @@index([sourceType, sourceId])
+  @@map("embeddings")
+}
