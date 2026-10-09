@@ -65,10 +65,17 @@ Design canvas holds the exact screens.
   whose profile is Live and account active). "Open project" opens the live URL
   in a new tab for now — the loading popup is the next milestone. View
   counts / likes aren't shown (no analytics data model yet).
+- **Milestone 8 — the Open-project flow:** the centre-screen popup
+  (`OpenProjectDialog`) with the animated Learnbay mark, project + student +
+  description. It polls `POST /api/projects/[id]/check`, which runs an
+  (interim) SSRF-safe check (`lib/ssrf.ts`: https-only, blocks IP literals /
+  localhost / metadata / private ranges, timeout, no redirect-follow), records
+  a `link_checks` row, and updates the project's link-health flags. Ready state
+  opens the project in a new tab; after 90 s it offers Open-anyway / Close.
 
-Still to come (spec build order): the Open-project flow (loading popup),
-certificate uploads, the SSRF-safe link checker, the AI assistant, rate limits,
-logging, and super-admin management of admins/students.
+Still to come (spec build order): certificate uploads, the full SSRF-safe link
+checker + daily worker, the AI assistant, rate limits, logging, and super-admin
+management of admins/students.
 
 ### Design vs. tech-doc decisions (milestone 4)
 

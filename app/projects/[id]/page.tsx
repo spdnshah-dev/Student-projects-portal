@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/brand/SiteFooter";
-import { OpenProjectButton } from "@/components/public/OpenProjectButton";
+import { OpenProjectDialog } from "@/components/public/OpenProjectDialog";
 import { ShareButton } from "@/components/public/ShareButton";
 import { initials, avatarClasses } from "@/lib/initials";
 import {
@@ -125,7 +125,18 @@ export default async function PublicProjectPage({
             </div>
           )}
           <div className="mt-2 flex flex-wrap items-center gap-4">
-            <OpenProjectButton liveUrl={project.liveUrl} />
+            <OpenProjectDialog
+              projectId={project.id}
+              liveUrl={project.liveUrl}
+              title={project.title}
+              description={project.description}
+              studentName={name}
+              studentMeta={
+                profile.courseCompleted
+                  ? COURSE_COMPLETED_LABELS[profile.courseCompleted]
+                  : undefined
+              }
+            />
             <p className="m-0 max-w-[420px] text-[13px] leading-snug text-[#A9B4C8] text-pretty">
               It runs on the student&apos;s own hosting, outside Learnbay, and
               opens in a new tab.
