@@ -19,9 +19,7 @@ Design canvas holds the exact screens.
 | Always-on worker             | Daily SSRF-safe link checker + AI vector building           |
 | Google Gemini (paid)         | The assistant's answers                                     |
 
-## Status — foundation (milestones 1–2)
-
-This repository currently contains the **foundation**:
+## Status — milestones 1–3
 
 - **Milestone 1 — project setup:** Next.js + TypeScript + Tailwind + Prisma,
   and the Learnbay brand shell (`components/brand/*`) every screen sits in,
@@ -30,11 +28,28 @@ This repository currently contains the **foundation**:
   (`prisma/schema.prisma`) — users, profiles, projects, version snapshots,
   certificates, reviews, link checks, AI sessions/messages, embeddings
   (pgvector), and the audit log.
+- **Milestone 3 — sign-in, roles, and the seed:** email/password login
+  (`/login`) shared by students and admins, scrypt password hashing and a
+  signed-cookie session (`lib/auth/*`), server-side role guards
+  (`requireUser` / `requireRole`) protecting `/dashboard`, `/admin`, `/super`,
+  and a fixed-password seed (`prisma/seed.ts`) creating the super admin, a test
+  admin, and sample students with published profiles/projects.
 
-Still to come (spec build order): auth + fixed-password seed, the student flow,
-the state machine, the admin flow, the public portal, the Open-project flow,
-certificate uploads, the SSRF-safe link checker, the AI assistant, rate limits,
-and logging.
+Still to come (spec build order): the student flow (set password, consent,
+profile setup, add project, dashboard), the state machine, the admin flow, the
+public portal, the Open-project flow, certificate uploads, the SSRF-safe link
+checker, the AI assistant, rate limits, and logging.
+
+### Test accounts (after `npm run db:seed`)
+
+All seeded accounts share the fixed password **`learnbay-test-2026`** (test
+phase only — not for production):
+
+| Role        | Email                                               |
+| ----------- | --------------------------------------------------- |
+| Super admin | `spandan@learnbay.co`                               |
+| Admin       | `karan.mehta@example.com`                           |
+| Student     | `riya.sharma@example.com` (+ other sample students) |
 
 ## Getting started
 
