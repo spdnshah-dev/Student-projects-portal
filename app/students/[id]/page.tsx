@@ -105,7 +105,18 @@ export default async function PublicProfilePage({
                 </div>
                 {profile.certificates.map((c) => (
                   <div key={c.id} className="flex flex-col">
-                    <span className="font-semibold">{c.name}</span>
+                    {c.fileKey ? (
+                      <a
+                        href={c.fileKey}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold text-brand-accent underline decoration-from-font underline-offset-2"
+                      >
+                        {c.name}
+                      </a>
+                    ) : (
+                      <span className="font-semibold">{c.name}</span>
+                    )}
                     {c.issuer && (
                       <span className="text-[13px] text-brand-muted">{c.issuer}</span>
                     )}

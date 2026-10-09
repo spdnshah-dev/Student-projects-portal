@@ -201,23 +201,6 @@ export function ProfileForm({ defaults }: { defaults: ProfileDefaults }) {
         </div>
       </div>
 
-      <div className="h-px bg-line" />
-
-      {/* Certificates — upload wired at the file-upload milestone */}
-      <div className="flex flex-col gap-2">
-        <h2 className="m-0 text-base font-bold">
-          Certificates{" "}
-          <span className="text-sm font-normal text-brand-muted">
-            (optional)
-          </span>
-        </h2>
-        <div className="rounded-xl border border-dashed border-line-strong bg-surface-canvas p-4 text-sm text-brand-muted">
-          Certificate uploads (with malware scanning and image re-encoding)
-          arrive at the file-upload milestone. You&apos;ll add a name, issuer,
-          and image here.
-        </div>
-      </div>
-
       <div className="sticky bottom-0 -mx-7 -mb-7 flex items-center gap-3 rounded-b-2xl border-t border-line bg-white px-7 py-3.5 shadow-[0_-6px_16px_rgba(16,24,43,0.05)]">
         <button
           type="submit"

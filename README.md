@@ -72,10 +72,20 @@ Design canvas holds the exact screens.
   localhost / metadata / private ranges, timeout, no redirect-follow), records
   a `link_checks` row, and updates the project's link-health flags. Ready state
   opens the project in a new tab; after 90 s it offers Open-anyway / Close.
+- **Milestone 9 — certificate uploads with safeguards:** real upload on Profile
+  Setup (`CertificateManager`). The pipeline (`lib/certificates.ts`) verifies
+  the true type by magic bytes (`lib/fileType.ts`; PDF/PNG/JPG only), caps size
+  at 10 MB, runs a malware-scan hook (`lib/malware.ts`, fail-closed when a
+  scanner is configured), re-encodes images with sharp to strip metadata,
+  stores under a random name in object storage (`lib/storage.ts`, Vercel Blob →
+  S3) served from a separate domain, and shows a certificate publicly only on an
+  approved (Live) profile. Adding/removing one re-opens a Live profile for
+  review. **Needs `BLOB_READ_WRITE_TOKEN`** to actually store files; malware
+  scanning uses `CLAMAV_SCAN_URL` (or GuardDuty in prod).
 
-Still to come (spec build order): certificate uploads, the full SSRF-safe link
-checker + daily worker, the AI assistant, rate limits, logging, and super-admin
-management of admins/students.
+Still to come (spec build order): the full SSRF-safe link checker + daily
+worker, the AI assistant, rate limits, logging, and super-admin management of
+admins/students.
 
 ### Design vs. tech-doc decisions (milestone 4)
 

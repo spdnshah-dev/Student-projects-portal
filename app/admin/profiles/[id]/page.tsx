@@ -36,6 +36,7 @@ export default async function ProfileReviewPage({
     include: {
       user: true,
       projects: { orderBy: { createdAt: "desc" } },
+      certificates: { orderBy: { uploadedAt: "asc" } },
     },
   });
   if (!profile) notFound();
@@ -95,6 +96,38 @@ export default async function ProfileReviewPage({
               </Row>
             </div>
           </div>
+
+          {profile.certificates.length > 0 && (
+            <div className="rounded-card border border-line bg-white p-5 shadow-card">
+              <div className="text-xs font-bold uppercase tracking-wider text-brand-muted">
+                Certificates ({profile.certificates.length})
+              </div>
+              <ul className="m-0 mt-2 flex list-none flex-col gap-2 p-0">
+                {profile.certificates.map((c) => (
+                  <li key={c.id} className="flex items-center justify-between gap-3">
+                    <span className="flex min-w-0 flex-col">
+                      <span className="truncate font-semibold">{c.name}</span>
+                      {c.issuer && (
+                        <span className="truncate text-[13px] text-brand-muted">
+                          {c.issuer}
+                        </span>
+                      )}
+                    </span>
+                    {c.fileKey && (
+                      <a
+                        href={c.fileKey}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-shrink-0 text-[13px] font-semibold text-brand-accent no-underline"
+                      >
+                        View
+                      </a>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div className="rounded-card border border-line bg-white p-5 shadow-card">
             <div className="text-xs font-bold uppercase tracking-wider text-brand-muted">

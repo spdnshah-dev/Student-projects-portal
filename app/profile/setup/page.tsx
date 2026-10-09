@@ -4,6 +4,7 @@ import { StudentHeader } from "@/components/student/StudentHeader";
 import { requireRole } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { ProfileForm, type ProfileDefaults } from "./ProfileForm";
+import { CertificateManager } from "./CertificateManager";
 
 export const metadata: Metadata = { title: "Complete your profile" };
 
@@ -32,7 +33,10 @@ export default async function ProfileSetupPage() {
   const user = await requireRole("STUDENT");
   const profile = await prisma.studentProfile.findUnique({
     where: { userId: user.id },
-    include: { _count: { select: { projects: true } } },
+    include: {
+      _count: { select: { projects: true } },
+      certificates: { orderBy: { uploadedAt: "asc" } },
+    },
   });
   if (!profile || !profile.consentAt) redirect("/consent");
 
@@ -70,8 +74,11 @@ export default async function ProfileSetupPage() {
         </div>
 
         <div className="flex w-full max-w-[1120px] flex-col items-start gap-6 pb-8 lg:flex-row">
-          <div className="min-w-0 flex-grow rounded-2xl border border-line bg-white p-7 shadow-card">
-            <ProfileForm defaults={defaults} />
+          <div className="flex min-w-0 flex-grow flex-col gap-6">
+            <div className="rounded-2xl border border-line bg-white p-7 shadow-card">
+              <ProfileForm defaults={defaults} />
+            </div>
+            <CertificateManager certificates={profile.certificates} />
           </div>
 
           <aside className="flex w-full flex-shrink-0 flex-col gap-3 rounded-2xl border border-line bg-white p-5 shadow-card lg:w-[300px]">
