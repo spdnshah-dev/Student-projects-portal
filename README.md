@@ -40,10 +40,18 @@ Design canvas holds the exact screens.
   student dashboard (`/dashboard`) with Overview and Link-problems tabs. Forms
   save via server actions with server-side auth; submitting a project snapshots
   it into a version and moves it to In review.
+- **Milestone 5 — the state machine:** the shared lifecycle for projects and
+  profiles. Pure transition rules (`lib/lifecycle-rules.ts`, unit-tested with
+  `npm test`) plus the DB operations (`lib/lifecycle.ts`): submit, edit-while-
+  published (opens a new pending version, old version stays public), approve,
+  send back, take down, restore — each snapshotting versions, moving the
+  `approvedVersionId` pointer, and writing review + audit rows. Public-
+  visibility rules live in `lib/visibility.ts` (a project is public only if it
+  and its profile are published and the account is active).
 
-Still to come (spec build order): the state machine (full transitions + admin
-approval), the admin flow, the public portal, the Open-project flow, certificate
-uploads, the SSRF-safe link checker, the AI assistant, rate limits, and logging.
+Still to come (spec build order): the admin flow (review queues that drive the
+state machine), the public portal, the Open-project flow, certificate uploads,
+the SSRF-safe link checker, the AI assistant, rate limits, and logging.
 
 ### Design vs. tech-doc decisions (milestone 4)
 

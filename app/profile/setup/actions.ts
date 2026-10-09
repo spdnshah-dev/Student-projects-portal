@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import type { CourseCompleted, Domain } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth/session";
+import { onProfileEdited } from "@/lib/lifecycle";
 import { COURSE_COMPLETED_LABELS, DOMAIN_LABELS } from "@/lib/constants";
 
 export type FormState = { error?: string };
@@ -76,6 +77,11 @@ export async function saveProfileAction(
       },
     }),
   ]);
+
+  // If the profile was already Live, editing opens a new pending version and
+  // moves it to Changes in review (the old version stays public). Drafts stay
+  // drafts.
+  await onProfileEdited(profile.id);
 
   redirect("/projects/new");
 }

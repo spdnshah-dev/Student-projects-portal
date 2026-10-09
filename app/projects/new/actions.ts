@@ -5,7 +5,7 @@ import type { Category, Domain } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth/session";
 import { CATEGORY_LABELS, DOMAIN_LABELS } from "@/lib/constants";
-import { submitProjectForReview } from "@/lib/review";
+import { submitProjectForReview } from "@/lib/lifecycle";
 
 export type FormState = { error?: string };
 
