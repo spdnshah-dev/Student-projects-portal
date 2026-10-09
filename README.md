@@ -48,10 +48,18 @@ Design canvas holds the exact screens.
   `approvedVersionId` pointer, and writing review + audit rows. Public-
   visibility rules live in `lib/visibility.ts` (a project is public only if it
   and its profile are published and the account is active).
+- **Milestone 6 — the admin flow (desktop):** the admin area under `/admin`
+  with a shared top nav — overview, the project **review queue** and the
+  **profiles** queue (each with Waiting / Sent back / Published·Live tabs), the
+  project and profile **review screens** (open the live link, see it as
+  visitors will, approve/publish or **send back with a required note**), a
+  **take-down** control for live projects, and the **students** list. Every
+  action is server-checked (admin + super admin) and drives the milestone-5
+  state machine. Link problems is a stub until the link-checker milestone.
 
-Still to come (spec build order): the admin flow (review queues that drive the
-state machine), the public portal, the Open-project flow, certificate uploads,
-the SSRF-safe link checker, the AI assistant, rate limits, and logging.
+Still to come (spec build order): the public portal, the Open-project flow,
+certificate uploads, the SSRF-safe link checker, the AI assistant, rate limits,
+logging, and super-admin management of admins/students.
 
 ### Design vs. tech-doc decisions (milestone 4)
 
