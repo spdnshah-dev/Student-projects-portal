@@ -7,6 +7,15 @@ const nextConfig = {
   images: {
     remotePatterns: [],
   },
+  // Photo and certificate uploads go through Server Actions, whose request body
+  // defaults to a 1 MB cap. Raise it to comfortably fit the 10 MB file limit
+  // the upload UI promises (plus multipart overhead) so large files reach our
+  // own size check instead of being rejected by the framework.
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "12mb",
+    },
+  },
 };
 
 export default nextConfig;
