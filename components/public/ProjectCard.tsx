@@ -22,10 +22,10 @@ export function ProjectCard({ project }: { project: CardProject }) {
   const tools = toolsList(project.toolsText).slice(0, 5);
 
   return (
-    <div className="flex flex-col gap-3 rounded-card border border-line bg-white p-[18px] shadow-card">
+    <div className="relative flex flex-col gap-3 rounded-card border border-line bg-white p-[18px] shadow-card transition-colors hover:border-line-strong">
       <Link
         href={`/students/${project.profileId}`}
-        className="flex min-h-9 items-center gap-2.5 text-brand-ink no-underline"
+        className="relative z-10 flex min-h-9 w-fit items-center gap-2.5 text-brand-ink no-underline hover:underline"
       >
         <Avatar name={name} photoUrl={project.profile.photoKey} size={32} />
         <span className="flex flex-col">
@@ -54,7 +54,8 @@ export function ProjectCard({ project }: { project: CardProject }) {
       <div className="mt-auto flex items-center justify-end border-t border-line pt-3">
         <Link
           href={`/projects/${project.id}`}
-          className="flex h-9 items-center gap-2 rounded-pill bg-brand-accent px-4 text-[13px] font-semibold text-white no-underline hover:bg-brand-accent-hover"
+          aria-label={`View project: ${project.title}`}
+          className="flex h-9 items-center gap-2 rounded-pill bg-brand-accent px-4 text-[13px] font-semibold text-white no-underline hover:bg-brand-accent-hover after:absolute after:inset-0 after:content-['']"
         >
           View project
           <svg width="16" height="16" viewBox="0 0 20 20" aria-hidden="true" className="fill-none stroke-current" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
