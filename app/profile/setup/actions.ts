@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import type { CourseCompleted, Domain } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth/session";
-import { onProfileEdited } from "@/lib/lifecycle";
+import { onProfileEdited, submitProfileForReview } from "@/lib/lifecycle";
 import { processCertificateFile } from "@/lib/certificates";
 import { deleteObject, StorageNotConfiguredError } from "@/lib/storage";
 import { formAllowed } from "@/lib/rate-limit";
@@ -89,10 +89,17 @@ export async function saveProfileAction(
     }),
   ]);
 
-  // If the profile was already Live, editing opens a new pending version and
-  // moves it to Changes in review (the old version stays public). Drafts stay
-  // drafts.
-  await onProfileEdited(profile.id);
+  // Completing profile setup submits the profile for admin review. A brand-new
+  // profile is still a DRAFT here, so send it to the review queue — otherwise it
+  // would never become Live and the student's projects could never go public.
+  // An already-reviewed or Live profile goes through onProfileEdited instead
+  // (which opens a new pending version, and if it was Live moves it to Changes
+  // in review while the old version stays public).
+  if (profile.state === "DRAFT") {
+    await submitProfileForReview(profile.id);
+  } else {
+    await onProfileEdited(profile.id);
+  }
 
   redirect("/projects/new");
 }
