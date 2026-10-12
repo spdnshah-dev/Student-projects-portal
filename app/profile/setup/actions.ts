@@ -8,13 +8,19 @@ import { requireRole } from "@/lib/auth/session";
 import { onProfileEdited, submitProfileForReview } from "@/lib/lifecycle";
 import { processCertificateFile } from "@/lib/certificates";
 import { processProfilePhoto } from "@/lib/photo";
-import { deleteObject, StorageNotConfiguredError } from "@/lib/storage";
+import {
+  deleteObject,
+  storageConfigured,
+  StorageNotConfiguredError,
+} from "@/lib/storage";
 import { formAllowed } from "@/lib/rate-limit";
 import { COURSE_COMPLETED_LABELS, DOMAIN_LABELS } from "@/lib/constants";
 
 export type FormState = { error?: string; ok?: boolean };
 
 const TOO_FAST = "You're doing that too fast — please wait a moment.";
+const STORAGE_OFF =
+  "File storage isn't set up yet. Ask an admin to connect Vercel Blob (BLOB_READ_WRITE_TOKEN).";
 
 function asEnum<T extends string>(
   value: FormDataEntryValue | null,
@@ -120,6 +126,8 @@ export async function uploadPhotoAction(
 
   const file = formData.get("photo");
   if (!(file instanceof File)) return { error: "Choose an image to upload." };
+  // Bail out before doing any image work when storage isn't connected.
+  if (!storageConfigured()) return { error: STORAGE_OFF };
 
   try {
     const processed = await processProfilePhoto(file);
@@ -187,6 +195,8 @@ export async function addCertificateAction(
 
   if (!name) return { error: "Give the certificate a name." };
   if (!(file instanceof File)) return { error: "Choose a file to upload." };
+  // Bail out before doing any file work when storage isn't connected.
+  if (!storageConfigured()) return { error: STORAGE_OFF };
 
   try {
     const processed = await processCertificateFile(file);
