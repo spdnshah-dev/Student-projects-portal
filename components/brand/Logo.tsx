@@ -1,8 +1,9 @@
+/* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 
 /**
- * The Learnbay Projects wordmark: an accent "L" tile, the Learnbay name, and a
- * "Projects" pill. Matches the header lockup in the design boards.
+ * The Learnbay logo (served from /public) plus a "Projects" pill marking this
+ * as the Learnbay Projects portal. Shown in every header.
  */
 export function Logo({ href = "/" }: { href?: string }) {
   return (
@@ -11,10 +12,13 @@ export function Logo({ href = "/" }: { href?: string }) {
       className="flex h-[38px] items-center gap-2.5 text-brand-ink no-underline"
       aria-label="Learnbay Projects home"
     >
-      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-accent text-base font-bold leading-none text-white">
-        L
-      </span>
-      <span className="text-lg font-bold tracking-tight">Learnbay</span>
+      <img
+        src="/learnbay-logo.png"
+        alt="Learnbay"
+        width={53}
+        height={29}
+        className="h-[29px] w-auto"
+      />
       <span className="rounded-pill border border-line-strong px-2 py-0.5 text-xs font-semibold text-brand-muted">
         Projects
       </span>
