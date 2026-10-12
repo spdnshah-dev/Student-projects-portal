@@ -28,6 +28,25 @@ function StatusPill({ state }: { state: ItemState }) {
   );
 }
 
+const PROFILE_STATUS: Record<ItemState, string> = {
+  DRAFT: "Not submitted yet — save your profile to send it for review.",
+  IN_REVIEW: "In review — an admin will publish it soon.",
+  CHANGES_IN_REVIEW: "Your edits are in review — your live version stays up meanwhile.",
+  CHANGES_NEEDED: "An admin asked for changes. Edit your profile and save to resubmit.",
+  PUBLISHED: "Live on your public profile.",
+  UNPUBLISHED: "Unpublished — not shown on the public site.",
+};
+
+function ProfileStatusBanner({ state }: { state: ItemState }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2.5 rounded-card border border-line bg-white px-4 py-3 shadow-card">
+      <span className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${STATE_DOT[state]}`} />
+      <span className="text-sm font-semibold">Your profile:</span>
+      <span className="text-sm text-brand-ink-soft">{PROFILE_STATUS[state]}</span>
+    </div>
+  );
+}
+
 function StatCard({ label, value, hint }: { label: string; value: string; hint: string }) {
   return (
     <div className="flex flex-col gap-1.5 rounded-card border border-line bg-white p-5 shadow-card">
@@ -109,6 +128,8 @@ export default async function DashboardPage({
             Link problems
           </Tab>
         </div>
+
+        <ProfileStatusBanner state={profile.state} />
 
         {tab === "overview" ? (
           <>

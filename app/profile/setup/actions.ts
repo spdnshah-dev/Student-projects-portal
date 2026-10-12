@@ -6,6 +6,7 @@ import type { CourseCompleted, Domain } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth/session";
 import { onProfileEdited, submitProfileForReview } from "@/lib/lifecycle";
+import { canApply } from "@/lib/lifecycle-rules";
 import { processCertificateFile } from "@/lib/certificates";
 import { processProfilePhoto } from "@/lib/photo";
 import {
@@ -96,19 +97,25 @@ export async function saveProfileAction(
     }),
   ]);
 
-  // Completing profile setup submits the profile for admin review. A brand-new
-  // profile is still a DRAFT here, so send it to the review queue — otherwise it
-  // would never become Live and the student's projects could never go public.
-  // An already-reviewed or Live profile goes through onProfileEdited instead
-  // (which opens a new pending version, and if it was Live moves it to Changes
-  // in review while the old version stays public).
-  if (profile.state === "DRAFT") {
+  // Saving submits the profile for admin review. From DRAFT (brand-new) or
+  // CHANGES_NEEDED (an admin sent it back), that's a fresh SUBMIT into the
+  // review queue. A Live or already-in-review profile goes through
+  // onProfileEdited instead, which opens or updates a pending version (and, if
+  // it was Live, moves it to Changes in review while the old version stays
+  // public).
+  if (canApply("SUBMIT", profile.state)) {
     await submitProfileForReview(profile.id);
   } else {
     await onProfileEdited(profile.id);
   }
 
-  redirect("/projects/new");
+  // A brand-new student with no project yet continues into adding their first
+  // one; anyone just editing their profile goes back to their dashboard rather
+  // than being forced into the project form.
+  const projectCount = await prisma.project.count({
+    where: { profileId: profile.id },
+  });
+  redirect(projectCount === 0 ? "/projects/new" : "/dashboard");
 }
 
 // --- Profile photo ---------------------------------------------------------
