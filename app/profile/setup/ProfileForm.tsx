@@ -193,9 +193,10 @@ export function ProfileForm({ defaults }: { defaults: ProfileDefaults }) {
           <input
             id="pf-linkedin"
             name="linkedinUrl"
-            type="url"
+            type="text"
+            inputMode="url"
             defaultValue={defaults.linkedinUrl}
-            placeholder="https://www.linkedin.com/in/your-name"
+            placeholder="linkedin.com/in/your-name"
             className={fieldCls}
           />
         </div>

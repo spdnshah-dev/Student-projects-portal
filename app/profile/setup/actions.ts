@@ -61,13 +61,17 @@ export async function saveProfileAction(
   const linkedinRaw = String(formData.get("linkedinUrl") ?? "").trim();
   let linkedinUrl: string | null = null;
   if (linkedinRaw !== "") {
-    if (!/^https:\/\/([a-z]+\.)?linkedin\.com\//i.test(linkedinRaw)) {
+    // Accept what people naturally paste (e.g. "linkedin.com/in/name" or
+    // "www.linkedin.com/..."): upgrade http→https and add the scheme if it's
+    // missing, then confirm it really is a linkedin.com address.
+    let normalized = linkedinRaw.replace(/^http:\/\//i, "https://");
+    if (!/^https:\/\//i.test(normalized)) normalized = `https://${normalized}`;
+    if (!/^https:\/\/([a-z0-9-]+\.)*linkedin\.com\//i.test(normalized)) {
       return {
-        error:
-          "Enter a full LinkedIn URL starting with https://www.linkedin.com/",
+        error: "Enter a LinkedIn profile link, e.g. linkedin.com/in/your-name",
       };
     }
-    linkedinUrl = linkedinRaw;
+    linkedinUrl = normalized;
   }
 
   await prisma.$transaction([
