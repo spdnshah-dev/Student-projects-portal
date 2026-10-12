@@ -4,6 +4,7 @@ import { StudentHeader } from "@/components/student/StudentHeader";
 import { requireRole } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { ProfileForm, type ProfileDefaults } from "./ProfileForm";
+import { PhotoUpload } from "./PhotoUpload";
 import { CertificateManager } from "./CertificateManager";
 
 export const metadata: Metadata = { title: "Complete your profile" };
@@ -76,6 +77,10 @@ export default async function ProfileSetupPage() {
         <div className="flex w-full max-w-[1120px] flex-col items-start gap-6 pb-8 lg:flex-row">
           <div className="flex min-w-0 flex-grow flex-col gap-6">
             <div className="rounded-2xl border border-line bg-white p-7 shadow-card">
+              <PhotoUpload
+                name={user.name || user.email}
+                photoUrl={profile.photoKey}
+              />
               <ProfileForm defaults={defaults} />
             </div>
             <CertificateManager certificates={profile.certificates} />

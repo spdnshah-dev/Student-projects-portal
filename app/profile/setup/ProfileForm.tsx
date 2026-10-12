@@ -8,7 +8,6 @@ import {
   DOMAIN_LABELS,
   DOMAIN_OPTIONS,
 } from "@/lib/constants";
-import { initials, avatarClasses } from "@/lib/initials";
 
 const initial: FormState = {};
 
@@ -33,7 +32,6 @@ export function ProfileForm({ defaults }: { defaults: ProfileDefaults }) {
     saveProfileAction,
     initial,
   );
-  const name = defaults.fullName || defaults.email;
 
   return (
     <form action={formAction} className="flex flex-col gap-[22px]">
@@ -45,29 +43,6 @@ export function ProfileForm({ defaults }: { defaults: ProfileDefaults }) {
           {state.error}
         </div>
       )}
-
-      {/* Photo */}
-      <div className="flex items-center gap-5">
-        <span
-          className={`flex h-[72px] w-[72px] flex-shrink-0 items-center justify-center rounded-full text-2xl font-bold ${avatarClasses(name)}`}
-        >
-          {initials(name)}
-        </span>
-        <div className="flex flex-col gap-2">
-          <div className="font-semibold">Profile photo</div>
-          <button
-            type="button"
-            disabled
-            title="Photo upload arrives with the file-upload milestone"
-            className="h-[38px] w-fit rounded-field border border-line-input bg-white px-4 font-semibold text-brand-ink disabled:opacity-50"
-          >
-            Upload photo
-          </button>
-          <div className={hintCls}>
-            Photo upload is added with the certificate/file-upload milestone.
-          </div>
-        </div>
-      </div>
 
       <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">

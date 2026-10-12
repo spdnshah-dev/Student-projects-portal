@@ -65,6 +65,7 @@ export type ProfileSnapshot = {
   yearsExperience: number | null;
   domain: Domain | null;
   linkedinUrl: string | null;
+  photoKey: string | null;
 };
 
 // Snapshots are written by lib/lifecycle, so their shape is controlled by us.

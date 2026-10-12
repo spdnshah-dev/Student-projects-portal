@@ -4,7 +4,7 @@ import { SiteHeader } from "@/components/brand/SiteHeader";
 import { SiteFooter } from "@/components/brand/SiteFooter";
 import { AudienceToggle } from "@/components/public/AudienceToggle";
 import { AssistantWidget } from "@/components/public/AssistantWidget";
-import { initials, avatarClasses } from "@/lib/initials";
+import { Avatar } from "@/components/ui/Avatar";
 import { DOMAIN_LABELS } from "@/lib/constants";
 import { getLiveProfiles } from "@/lib/public";
 
@@ -60,9 +60,7 @@ export default async function StudentsPage() {
                     className="flex flex-col gap-3 rounded-card border border-line bg-white p-5 text-brand-ink no-underline shadow-card hover:border-line-strong"
                   >
                     <div className="flex items-center gap-3">
-                      <span className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold ${avatarClasses(name)}`}>
-                        {initials(name)}
-                      </span>
+                      <Avatar name={name} photoUrl={p.photoKey} size={48} />
                       <div className="flex min-w-0 flex-col">
                         <span className="truncate font-bold">{name}</span>
                         {meta && (

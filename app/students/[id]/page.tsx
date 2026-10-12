@@ -4,7 +4,7 @@ import { SiteHeader } from "@/components/brand/SiteHeader";
 import { SiteFooter } from "@/components/brand/SiteFooter";
 import { ProjectCard } from "@/components/public/ProjectCard";
 import { AssistantWidget } from "@/components/public/AssistantWidget";
-import { initials, avatarClasses } from "@/lib/initials";
+import { Avatar } from "@/components/ui/Avatar";
 import { COURSE_COMPLETED_LABELS, DOMAIN_LABELS } from "@/lib/constants";
 import { getPublicProfile } from "@/lib/public";
 
@@ -41,9 +41,7 @@ export default async function PublicProfilePage({
         {/* Sidebar */}
         <aside className="flex w-full flex-shrink-0 flex-col gap-5 rounded-card border border-line bg-white p-6 shadow-card lg:w-[320px] lg:sticky lg:top-6">
           <div className="flex flex-col items-start gap-3">
-            <span className={`flex h-16 w-16 items-center justify-center rounded-full text-xl font-bold ${avatarClasses(name)}`}>
-              {initials(name)}
-            </span>
+            <Avatar name={name} photoUrl={profile.photoKey} size={64} />
             <div className="flex flex-col gap-1.5">
               <h1 className="m-0 text-xl font-bold tracking-tight">{name}</h1>
               {profile.yearsExperience != null && (

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Project, StudentProfile, User } from "@prisma/client";
-import { initials, avatarClasses } from "@/lib/initials";
+import { Avatar } from "@/components/ui/Avatar";
 import { DOMAIN_LABELS } from "@/lib/constants";
 import { toolsList } from "@/lib/public";
 
@@ -27,9 +27,7 @@ export function ProjectCard({ project }: { project: CardProject }) {
         href={`/students/${project.profileId}`}
         className="flex min-h-9 items-center gap-2.5 text-brand-ink no-underline"
       >
-        <span className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold ${avatarClasses(name)}`}>
-          {initials(name)}
-        </span>
+        <Avatar name={name} photoUrl={project.profile.photoKey} size={32} />
         <span className="flex flex-col">
           <span className="font-semibold">{name}</span>
           <span className="text-xs text-brand-muted">{studentMeta(project.profile)}</span>

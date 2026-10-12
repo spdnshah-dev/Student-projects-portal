@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth/session";
 import { onProfileEdited, submitProfileForReview } from "@/lib/lifecycle";
 import { processCertificateFile } from "@/lib/certificates";
+import { processProfilePhoto } from "@/lib/photo";
 import { deleteObject, StorageNotConfiguredError } from "@/lib/storage";
 import { formAllowed } from "@/lib/rate-limit";
 import { COURSE_COMPLETED_LABELS, DOMAIN_LABELS } from "@/lib/constants";
@@ -102,6 +103,69 @@ export async function saveProfileAction(
   }
 
   redirect("/projects/new");
+}
+
+// --- Profile photo ---------------------------------------------------------
+
+export async function uploadPhotoAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await requireRole("STUDENT");
+  if (!(await formAllowed())) return { error: TOO_FAST };
+  const profile = await prisma.studentProfile.findUnique({
+    where: { userId: user.id },
+  });
+  if (!profile) redirect("/consent");
+
+  const file = formData.get("photo");
+  if (!(file instanceof File)) return { error: "Choose an image to upload." };
+
+  try {
+    const processed = await processProfilePhoto(file);
+    if (!processed.ok) return { error: processed.error };
+
+    const previous = profile.photoKey;
+    await prisma.studentProfile.update({
+      where: { id: profile.id },
+      data: { photoKey: processed.fileKey },
+    });
+    // Replacing a Live photo sends the profile back for re-review (same as any
+    // other profile edit); a draft stays a draft until it's submitted.
+    await onProfileEdited(profile.id);
+    if (previous) await deleteObject(previous);
+
+    revalidatePath("/profile/setup");
+    return { ok: true };
+  } catch (e) {
+    if (e instanceof StorageNotConfiguredError) {
+      return {
+        error:
+          "File storage isn't set up yet. Ask an admin to configure BLOB_READ_WRITE_TOKEN.",
+      };
+    }
+    return { error: "Upload failed. Please try again." };
+  }
+}
+
+export async function removePhotoAction(): Promise<FormState> {
+  const user = await requireRole("STUDENT");
+  const profile = await prisma.studentProfile.findUnique({
+    where: { userId: user.id },
+  });
+  if (!profile) redirect("/consent");
+
+  if (profile.photoKey) {
+    const previous = profile.photoKey;
+    await prisma.studentProfile.update({
+      where: { id: profile.id },
+      data: { photoKey: null },
+    });
+    await onProfileEdited(profile.id);
+    await deleteObject(previous);
+    revalidatePath("/profile/setup");
+  }
+  return {};
 }
 
 // --- Certificates ----------------------------------------------------------

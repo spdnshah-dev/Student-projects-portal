@@ -5,7 +5,7 @@ import { SiteFooter } from "@/components/brand/SiteFooter";
 import { OpenProjectDialog } from "@/components/public/OpenProjectDialog";
 import { ShareButton } from "@/components/public/ShareButton";
 import { AssistantWidget } from "@/components/public/AssistantWidget";
-import { initials, avatarClasses } from "@/lib/initials";
+import { Avatar } from "@/components/ui/Avatar";
 import {
   CATEGORY_LABELS,
   COURSE_COMPLETED_LABELS,
@@ -66,9 +66,7 @@ export default async function PublicProjectPage({
           Profile
         </Link>
         <div className="flex min-w-0 flex-grow items-center gap-3">
-          <span className={`flex h-[38px] w-[38px] flex-shrink-0 items-center justify-center rounded-full text-sm font-bold ${avatarClasses(name)}`}>
-            {initials(name)}
-          </span>
+          <Avatar name={name} photoUrl={project.profile.photoKey} size={38} />
           <div className="flex min-w-0 flex-col">
             <Link href={`/students/${project.profileId}`} className="font-bold text-brand-ink no-underline">
               {name}

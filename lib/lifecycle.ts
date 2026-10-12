@@ -39,6 +39,7 @@ function snapshotProfile(p: StudentProfile): Prisma.InputJsonObject {
     yearsExperience: p.yearsExperience,
     domain: p.domain,
     linkedinUrl: p.linkedinUrl,
+    photoKey: p.photoKey,
   };
 }
 

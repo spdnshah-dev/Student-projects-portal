@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { ItemStatus } from "@/components/admin/ItemStatus";
 import { ReviewActionBar } from "@/components/admin/ReviewActionBar";
-import { initials, avatarClasses } from "@/lib/initials";
+import { Avatar } from "@/components/ui/Avatar";
 import { requireRole } from "@/lib/auth/session";
 import { ADMIN_ROLES } from "@/lib/auth/roles";
 import { prisma } from "@/lib/prisma";
@@ -63,9 +63,7 @@ export default async function ProfileReviewPage({
           </div>
 
           <div className="flex items-center gap-4 rounded-card border border-line bg-white p-5 shadow-card">
-            <span className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full text-lg font-bold ${avatarClasses(name)}`}>
-              {initials(name)}
-            </span>
+            <Avatar name={name} photoUrl={profile.photoKey} size={56} />
             <div className="flex flex-col">
               <span className="text-lg font-bold">{name}</span>
               <span className="text-[13px] text-brand-muted">{profile.user.email}</span>
