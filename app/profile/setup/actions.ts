@@ -146,13 +146,10 @@ export async function uploadPhotoAction(
     revalidatePath("/profile/setup");
     return { ok: true };
   } catch (e) {
-    if (e instanceof StorageNotConfiguredError) {
-      return {
-        error:
-          "File storage isn't set up yet. Ask an admin to configure BLOB_READ_WRITE_TOKEN.",
-      };
-    }
-    return { error: "Upload failed. Please try again." };
+    if (e instanceof StorageNotConfiguredError) return { error: STORAGE_OFF };
+    console.error("[photo upload] failed:", e);
+    const detail = e instanceof Error ? e.message : String(e);
+    return { error: `Upload failed: ${detail}` };
   }
 }
 
@@ -216,13 +213,10 @@ export async function addCertificateAction(
     revalidatePath("/profile/setup");
     return { ok: true };
   } catch (e) {
-    if (e instanceof StorageNotConfiguredError) {
-      return {
-        error:
-          "File storage isn't set up yet. Ask an admin to configure BLOB_READ_WRITE_TOKEN.",
-      };
-    }
-    return { error: "Upload failed. Please try again." };
+    if (e instanceof StorageNotConfiguredError) return { error: STORAGE_OFF };
+    console.error("[certificate upload] failed:", e);
+    const detail = e instanceof Error ? e.message : String(e);
+    return { error: `Upload failed: ${detail}` };
   }
 }
 
