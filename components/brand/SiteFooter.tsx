@@ -7,7 +7,7 @@ export function SiteFooter() {
       <div className="font-semibold">Learnbay Projects</div>
       <nav className="flex items-center gap-7">
         <a
-          href={`${LEARNBAY_HOME_URL}/about`}
+          href={`${LEARNBAY_HOME_URL}/about-us`}
           className="flex min-h-[36px] items-center font-semibold text-brand-muted no-underline hover:text-brand-ink"
         >
           About Learnbay
