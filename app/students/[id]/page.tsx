@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/brand/SiteFooter";
 import { ProjectCard } from "@/components/public/ProjectCard";
 import { AssistantWidget } from "@/components/public/AssistantWidget";
 import { Avatar } from "@/components/ui/Avatar";
+import { CertificateViewer } from "@/components/public/CertificateViewer";
 import { COURSE_COMPLETED_LABELS, DOMAIN_LABELS } from "@/lib/constants";
 import { getPublicProfile } from "@/lib/public";
 
@@ -102,25 +103,7 @@ export default async function PublicProfilePage({
                 <div className="text-xs font-bold uppercase tracking-wider text-brand-muted">
                   Certificates earned
                 </div>
-                {profile.certificates.map((c) => (
-                  <div key={c.id} className="flex flex-col">
-                    {c.fileKey ? (
-                      <a
-                        href={c.fileKey}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-semibold text-brand-accent underline decoration-from-font underline-offset-2"
-                      >
-                        {c.name}
-                      </a>
-                    ) : (
-                      <span className="font-semibold">{c.name}</span>
-                    )}
-                    {c.issuer && (
-                      <span className="text-[13px] text-brand-muted">{c.issuer}</span>
-                    )}
-                  </div>
-                ))}
+                <CertificateViewer certificates={profile.certificates} />
               </div>
             </>
           )}
