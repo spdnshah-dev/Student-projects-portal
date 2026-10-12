@@ -25,12 +25,22 @@ export function CertificateManager({ certificates }: { certificates: Cert[] }) {
     initial,
   );
   const formRef = useRef<HTMLFormElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
   const [removing, startRemove] = useTransition();
   const [removeError, setRemoveError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (state.ok) formRef.current?.reset();
+    if (state.ok) {
+      formRef.current?.reset();
+      setFileName(null);
+    }
   }, [state]);
+
+  function clearFile() {
+    if (fileRef.current) fileRef.current.value = "";
+    setFileName(null);
+  }
 
   function remove(id: string) {
     setRemoveError(null);
@@ -143,10 +153,24 @@ export function CertificateManager({ certificates }: { certificates: Cert[] }) {
             id="cert-file"
             name="file"
             type="file"
+            ref={fileRef}
             accept="application/pdf,image/png,image/jpeg"
             required
+            onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
             className="text-sm file:mr-3 file:rounded-field file:border file:border-line-input file:bg-white file:px-3 file:py-2 file:text-sm file:font-semibold"
           />
+          {fileName && (
+            <div className="flex items-center gap-2 text-[13px] text-brand-muted">
+              <span className="truncate">Selected: {fileName}</span>
+              <button
+                type="button"
+                onClick={clearFile}
+                className="flex-shrink-0 font-semibold text-state-sentback underline"
+              >
+                Clear
+              </button>
+            </div>
+          )}
         </div>
         <button
           type="submit"
