@@ -5,6 +5,12 @@ import { ButtonLink } from "@/components/ui/Button";
 import { initials, avatarClasses } from "@/lib/initials";
 import { requireRole } from "@/lib/auth/session";
 import { ADMIN_ROLES } from "@/lib/auth/roles";
+import {
+  scopedStudentIds,
+  projectScope,
+  profileScope,
+  studentUserScope,
+} from "@/lib/admin-scope";
 import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = { title: "Admin overview" };
@@ -27,15 +33,19 @@ function StatCard({ label, value, href }: { label: string; value: number; href: 
 
 export default async function AdminOverviewPage() {
   const user = await requireRole(ADMIN_ROLES);
+  const ids = await scopedStudentIds(user);
+  const pScope = projectScope(ids);
+  const prScope = profileScope(ids);
+  const uScope = studentUserScope(ids);
 
   const [projectsWaiting, profilesWaiting, publishedProjects, students, recent] =
     await Promise.all([
-      prisma.project.count({ where: { state: { in: [...NEEDS_REVIEW] } } }),
-      prisma.studentProfile.count({ where: { state: { in: [...NEEDS_REVIEW] } } }),
-      prisma.project.count({ where: { state: "PUBLISHED" } }),
-      prisma.user.count({ where: { role: "STUDENT" } }),
+      prisma.project.count({ where: { state: { in: [...NEEDS_REVIEW] }, ...pScope } }),
+      prisma.studentProfile.count({ where: { state: { in: [...NEEDS_REVIEW] }, ...prScope } }),
+      prisma.project.count({ where: { state: "PUBLISHED", ...pScope } }),
+      prisma.user.count({ where: { role: "STUDENT", ...uScope } }),
       prisma.project.findMany({
-        where: { state: { in: [...NEEDS_REVIEW] } },
+        where: { state: { in: [...NEEDS_REVIEW] }, ...pScope },
         orderBy: { updatedAt: "asc" },
         take: 8,
         include: { profile: { include: { user: true } } },

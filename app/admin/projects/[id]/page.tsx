@@ -8,6 +8,7 @@ import { TakeDownButton } from "@/components/admin/TakeDownButton";
 import { initials, avatarClasses } from "@/lib/initials";
 import { requireRole } from "@/lib/auth/session";
 import { ADMIN_ROLES } from "@/lib/auth/roles";
+import { canAccessStudent } from "@/lib/admin-scope";
 import { prisma } from "@/lib/prisma";
 import {
   CATEGORY_LABELS,
@@ -31,6 +32,8 @@ export default async function ProjectReviewPage({
     include: { profile: { include: { user: true } } },
   });
   if (!project) notFound();
+  // A regular admin may only open projects of students assigned to them.
+  if (!(await canAccessStudent(user, project.profile.userId))) notFound();
 
   const student = project.profile.user;
   const studentName = student.name ?? student.email;

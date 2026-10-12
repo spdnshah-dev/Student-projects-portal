@@ -277,6 +277,23 @@ async function main() {
   }
   await seedStudent(DRAFT_STUDENT, passwordHash, admin.id, false);
 
+  // Scoped-access demo: the test admin (Karan) is assigned only Riya and Meera,
+  // so signing in as Karan shows those two but not Imran or Aditya. The super
+  // admin always sees everyone.
+  const scoped = await prisma.user.findMany({
+    where: {
+      email: { in: ["riya.sharma@example.com", "meera.nair@example.com"] },
+    },
+    select: { id: true },
+  });
+  for (const s of scoped) {
+    await prisma.adminAssignment.upsert({
+      where: { adminId_studentId: { adminId: admin.id, studentId: s.id } },
+      update: {},
+      create: { adminId: admin.id, studentId: s.id },
+    });
+  }
+
   const projectCount = STUDENTS.reduce((n, s) => n + s.projects.length, 0);
 
   /* eslint-disable no-console */

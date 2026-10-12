@@ -150,7 +150,28 @@ model User {
   reviewedProjectVersions ProjectVersion[] @relation("ReviewedProjectVersions")
   auditLogs               AuditLog[]
 
+  // Scoped admin access: which students an admin may review, and which admins a
+  // student is assigned to. The super admin ignores these and sees everyone.
+  assignedStudents AdminAssignment[] @relation("AdminToStudents")
+  assignedToAdmins AdminAssignment[] @relation("StudentToAdmins")
+
   @@map("users")
+}
+
+// Grants a (regular) admin access to review one student's profile and projects.
+// A super admin needs no rows here — they always have access to everyone.
+model AdminAssignment {
+  id        String   @id @default(cuid())
+  adminId   String   @map("admin_id")
+  admin     User     @relation("AdminToStudents", fields: [adminId], references: [id], onDelete: Cascade)
+  studentId String   @map("student_id")
+  student   User     @relation("StudentToAdmins", fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([adminId, studentId])
+  @@index([adminId])
+  @@index([studentId])
+  @@map("admin_assignments")
 }
 
 // ---------------------------------------------------------------------------

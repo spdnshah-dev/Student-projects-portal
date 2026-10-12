@@ -3,6 +3,7 @@ import { AdminHeader } from "@/components/admin/AdminHeader";
 import { initials, avatarClasses } from "@/lib/initials";
 import { requireRole } from "@/lib/auth/session";
 import { ADMIN_ROLES } from "@/lib/auth/roles";
+import { scopedStudentIds, projectScope } from "@/lib/admin-scope";
 import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = { title: "Link problems" };
@@ -20,9 +21,10 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 export default async function AdminLinksPage() {
   const user = await requireRole(ADMIN_ROLES);
+  const scope = projectScope(await scopedStudentIds(user));
 
   const broken = await prisma.project.findMany({
-    where: { state: "PUBLISHED", linkOk: false },
+    where: { state: "PUBLISHED", linkOk: false, ...scope },
     orderBy: { linkLastCheckedAt: "desc" },
     include: {
       profile: { include: { user: true } },

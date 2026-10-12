@@ -12,6 +12,41 @@ import {
 } from "@/lib/lifecycle";
 import { LifecycleError } from "@/lib/lifecycle-rules";
 import { reindexProfile, reindexProject, removeSource } from "@/lib/embeddings";
+import { prisma } from "@/lib/prisma";
+import { canAccessStudent } from "@/lib/admin-scope";
+import type { User } from "@prisma/client";
+
+const NO_ACCESS = "You don't have access to this student.";
+
+/** Guard: a regular admin may only act on projects of assigned students. */
+async function denyProjectAccess(
+  admin: User,
+  projectId: string,
+): Promise<ActionResult | null> {
+  const p = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { profile: { select: { userId: true } } },
+  });
+  if (!p) return { error: "That project was not found." };
+  if (!(await canAccessStudent(admin, p.profile.userId))) {
+    return { error: NO_ACCESS };
+  }
+  return null;
+}
+
+/** Guard: a regular admin may only act on profiles of assigned students. */
+async function denyProfileAccess(
+  admin: User,
+  profileId: string,
+): Promise<ActionResult | null> {
+  const p = await prisma.studentProfile.findUnique({
+    where: { id: profileId },
+    select: { userId: true },
+  });
+  if (!p) return { error: "That profile was not found." };
+  if (!(await canAccessStudent(admin, p.userId))) return { error: NO_ACCESS };
+  return null;
+}
 
 // Index updates are best-effort: a Gemini/DB hiccup must never undo or block a
 // review decision that already committed. The daily rebuild re-syncs anyway.
@@ -38,6 +73,8 @@ function revalidateAdmin() {
 
 export async function approveProjectAction(id: string): Promise<ActionResult> {
   const admin = await requireRole(ADMIN_ROLES);
+  const denied = await denyProjectAccess(admin, id);
+  if (denied) return denied;
   try {
     await approveProject(id, admin.id);
     await safeIndex(() => reindexProject(id));
@@ -53,6 +90,8 @@ export async function sendBackProjectAction(
   note: string,
 ): Promise<ActionResult> {
   const admin = await requireRole(ADMIN_ROLES);
+  const denied = await denyProjectAccess(admin, id);
+  if (denied) return denied;
   if (!note.trim()) return { error: "Write a note telling the student what to fix." };
   try {
     await sendBackProject(id, admin.id, note.trim());
@@ -68,6 +107,8 @@ export async function takeDownProjectAction(
   note?: string,
 ): Promise<ActionResult> {
   const admin = await requireRole(ADMIN_ROLES);
+  const denied = await denyProjectAccess(admin, id);
+  if (denied) return denied;
   try {
     await takeDownProject(id, admin.id, note?.trim() || undefined);
     await safeIndex(() => removeSource("PROJECT", id));
@@ -80,6 +121,8 @@ export async function takeDownProjectAction(
 
 export async function approveProfileAction(id: string): Promise<ActionResult> {
   const admin = await requireRole(ADMIN_ROLES);
+  const denied = await denyProfileAccess(admin, id);
+  if (denied) return denied;
   try {
     await approveProfile(id, admin.id);
     await safeIndex(() => reindexProfile(id));
@@ -95,6 +138,8 @@ export async function sendBackProfileAction(
   note: string,
 ): Promise<ActionResult> {
   const admin = await requireRole(ADMIN_ROLES);
+  const denied = await denyProfileAccess(admin, id);
+  if (denied) return denied;
   if (!note.trim()) return { error: "Write a note telling the student what to fix." };
   try {
     await sendBackProfile(id, admin.id, note.trim());

@@ -7,6 +7,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { initials, avatarClasses } from "@/lib/initials";
 import { requireRole } from "@/lib/auth/session";
 import { ADMIN_ROLES } from "@/lib/auth/roles";
+import { scopedStudentIds, profileScope } from "@/lib/admin-scope";
 import { prisma } from "@/lib/prisma";
 import { COURSE_COMPLETED_LABELS } from "@/lib/constants";
 import { timeAgo } from "@/lib/time";
@@ -48,7 +49,11 @@ export default async function ProfileQueuePage({
   const raw = (await searchParams).tab;
   const tab: TabKey = raw === "sentback" || raw === "live" ? raw : "waiting";
 
-  const where: Prisma.StudentProfileWhereInput = { state: { in: TAB_FILTER[tab] } };
+  const scope = profileScope(await scopedStudentIds(user));
+  const where: Prisma.StudentProfileWhereInput = {
+    state: { in: TAB_FILTER[tab] },
+    ...scope,
+  };
 
   const [rows, waiting, sentback, live] = await Promise.all([
     prisma.studentProfile.findMany({
@@ -56,9 +61,9 @@ export default async function ProfileQueuePage({
       orderBy: tab === "live" ? { updatedAt: "desc" } : { updatedAt: "asc" },
       include: { user: true, _count: { select: { projects: true } } },
     }),
-    prisma.studentProfile.count({ where: { state: { in: TAB_FILTER.waiting } } }),
-    prisma.studentProfile.count({ where: { state: { in: TAB_FILTER.sentback } } }),
-    prisma.studentProfile.count({ where: { state: { in: TAB_FILTER.live } } }),
+    prisma.studentProfile.count({ where: { state: { in: TAB_FILTER.waiting }, ...scope } }),
+    prisma.studentProfile.count({ where: { state: { in: TAB_FILTER.sentback }, ...scope } }),
+    prisma.studentProfile.count({ where: { state: { in: TAB_FILTER.live }, ...scope } }),
   ]);
 
   return (

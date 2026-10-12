@@ -7,6 +7,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { initials, avatarClasses } from "@/lib/initials";
 import { requireRole } from "@/lib/auth/session";
 import { ADMIN_ROLES } from "@/lib/auth/roles";
+import { scopedStudentIds, projectScope } from "@/lib/admin-scope";
 import { prisma } from "@/lib/prisma";
 import { CATEGORY_LABELS } from "@/lib/constants";
 import { hostOf } from "@/lib/url";
@@ -49,7 +50,8 @@ export default async function ReviewQueuePage({
   const raw = (await searchParams).tab;
   const tab: TabKey = raw === "sentback" || raw === "published" ? raw : "waiting";
 
-  const where: Prisma.ProjectWhereInput = { state: { in: TAB_FILTER[tab] } };
+  const scope = projectScope(await scopedStudentIds(user));
+  const where: Prisma.ProjectWhereInput = { state: { in: TAB_FILTER[tab] }, ...scope };
 
   const [rows, waiting, sentback, published] = await Promise.all([
     prisma.project.findMany({
@@ -57,9 +59,9 @@ export default async function ReviewQueuePage({
       orderBy: tab === "published" ? { updatedAt: "desc" } : { updatedAt: "asc" },
       include: { profile: { include: { user: true } } },
     }),
-    prisma.project.count({ where: { state: { in: TAB_FILTER.waiting } } }),
-    prisma.project.count({ where: { state: { in: TAB_FILTER.sentback } } }),
-    prisma.project.count({ where: { state: { in: TAB_FILTER.published } } }),
+    prisma.project.count({ where: { state: { in: TAB_FILTER.waiting }, ...scope } }),
+    prisma.project.count({ where: { state: { in: TAB_FILTER.sentback }, ...scope } }),
+    prisma.project.count({ where: { state: { in: TAB_FILTER.published }, ...scope } }),
   ]);
 
   return (

@@ -7,15 +7,33 @@ import { prisma } from "@/lib/prisma";
 import { ROLE_LABELS, SUPER_ADMIN_EMAIL } from "@/lib/constants";
 import { AddUserForm } from "./AddUserForm";
 import { StatusButton } from "./StatusButton";
+import { AssignStudentsButton } from "./AssignStudentsButton";
 
 export const metadata: Metadata = { title: "Admins & students" };
 
 export default async function PeoplePage() {
   const user = await requireRole("SUPER_ADMIN");
 
-  const users = await prisma.user.findMany({
-    orderBy: [{ role: "asc" }, { createdAt: "desc" }],
-  });
+  const [users, students, assignments] = await Promise.all([
+    prisma.user.findMany({
+      orderBy: [{ role: "asc" }, { createdAt: "desc" }],
+    }),
+    prisma.user.findMany({
+      where: { role: "STUDENT" },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, name: true, email: true },
+    }),
+    prisma.adminAssignment.findMany({
+      select: { adminId: true, studentId: true },
+    }),
+  ]);
+
+  const assignedByAdmin = new Map<string, string[]>();
+  for (const a of assignments) {
+    const list = assignedByAdmin.get(a.adminId) ?? [];
+    list.push(a.studentId);
+    assignedByAdmin.set(a.adminId, list);
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-surface-canvas">
@@ -69,7 +87,15 @@ export default async function PeoplePage() {
                       <Badge tone="neutral">Disabled</Badge>
                     )}
                   </div>
-                  <div className="justify-self-end">
+                  <div className="flex items-center gap-3 justify-self-end">
+                    {u.role === "ADMIN" && (
+                      <AssignStudentsButton
+                        adminId={u.id}
+                        adminName={name}
+                        students={students}
+                        assignedIds={assignedByAdmin.get(u.id) ?? []}
+                      />
+                    )}
                     {isSuper ? (
                       <span className="text-[13px] text-brand-muted">—</span>
                     ) : (

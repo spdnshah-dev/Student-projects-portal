@@ -6,15 +6,17 @@ import { ButtonLink } from "@/components/ui/Button";
 import { initials, avatarClasses } from "@/lib/initials";
 import { requireRole } from "@/lib/auth/session";
 import { ADMIN_ROLES } from "@/lib/auth/roles";
+import { scopedStudentIds, studentUserScope } from "@/lib/admin-scope";
 import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = { title: "Students" };
 
 export default async function StudentsPage() {
   const user = await requireRole(ADMIN_ROLES);
+  const uScope = studentUserScope(await scopedStudentIds(user));
 
   const students = await prisma.user.findMany({
-    where: { role: "STUDENT" },
+    where: { role: "STUDENT", ...uScope },
     orderBy: { createdAt: "desc" },
     include: {
       profile: {

@@ -50,6 +50,53 @@ export async function addUserAction(
   return { ok: true };
 }
 
+/**
+ * Replace the set of students a regular admin may review. Passing an empty list
+ * removes all of that admin's access. Only the super admin can do this.
+ */
+export async function setAdminAssignmentsAction(
+  adminId: string,
+  studentIds: string[],
+): Promise<ActionResult> {
+  const actor = await requireRole("SUPER_ADMIN");
+
+  const admin = await prisma.user.findUnique({ where: { id: adminId } });
+  if (!admin || admin.role !== "ADMIN") {
+    return { error: "That admin was not found." };
+  }
+
+  // Keep only ids that are genuine students.
+  const students = await prisma.user.findMany({
+    where: { id: { in: studentIds }, role: "STUDENT" },
+    select: { id: true },
+  });
+  const validIds = students.map((s) => s.id);
+
+  await prisma.$transaction([
+    prisma.adminAssignment.deleteMany({ where: { adminId } }),
+    ...(validIds.length
+      ? [
+          prisma.adminAssignment.createMany({
+            data: validIds.map((studentId) => ({ adminId, studentId })),
+            skipDuplicates: true,
+          }),
+        ]
+      : []),
+  ]);
+
+  await prisma.auditLog.create({
+    data: {
+      actorId: actor.id,
+      action: "ADMIN_ASSIGN",
+      target: adminId,
+      detail: { studentIds: validIds },
+    },
+  });
+
+  revalidatePath("/super/people");
+  return { ok: true };
+}
+
 export async function setUserStatusAction(
   userId: string,
   disable: boolean,

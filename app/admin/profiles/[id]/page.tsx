@@ -7,6 +7,7 @@ import { ReviewActionBar } from "@/components/admin/ReviewActionBar";
 import { Avatar } from "@/components/ui/Avatar";
 import { requireRole } from "@/lib/auth/session";
 import { ADMIN_ROLES } from "@/lib/auth/roles";
+import { canAccessStudent } from "@/lib/admin-scope";
 import { prisma } from "@/lib/prisma";
 import { COURSE_COMPLETED_LABELS, DOMAIN_LABELS } from "@/lib/constants";
 
@@ -40,6 +41,8 @@ export default async function ProfileReviewPage({
     },
   });
   if (!profile) notFound();
+  // A regular admin may only open profiles of students assigned to them.
+  if (!(await canAccessStudent(user, profile.userId))) notFound();
 
   const name = profile.user.name ?? profile.user.email;
   const firstName = name.split(" ")[0];
