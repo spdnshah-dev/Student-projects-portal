@@ -57,9 +57,17 @@ export async function countPublishedProjects(): Promise<number> {
   return prisma.project.count({ where: PUBLIC_PROJECT });
 }
 
-export async function getLiveProfiles() {
+export async function getLiveProfiles(q?: string) {
+  const where: Prisma.StudentProfileWhereInput = { ...LIVE_PROFILE };
+  const term = q?.trim();
+  if (term) {
+    where.OR = [
+      { user: { name: { contains: term, mode: "insensitive" } } },
+      { headline: { contains: term, mode: "insensitive" } },
+    ];
+  }
   return prisma.studentProfile.findMany({
-    where: LIVE_PROFILE,
+    where,
     orderBy: { updatedAt: "desc" },
     include: {
       user: true,
