@@ -4,8 +4,7 @@ import { SiteHeader } from "@/components/brand/SiteHeader";
 import { SiteFooter } from "@/components/brand/SiteFooter";
 import { AudienceToggle } from "@/components/public/AudienceToggle";
 import { AssistantWidget } from "@/components/public/AssistantWidget";
-import { Avatar } from "@/components/ui/Avatar";
-import { DOMAIN_LABELS } from "@/lib/constants";
+import { StudentCard } from "@/components/public/StudentCard";
 import { getLiveProfiles } from "@/lib/public";
 
 export const metadata: Metadata = { title: "Students" };
@@ -97,45 +96,9 @@ export default async function StudentsPage({
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {profiles.map((p) => {
-                const name = p.user.name ?? "Student";
-                const meta = [
-                  p.yearsExperience != null
-                    ? `${p.yearsExperience} year${p.yearsExperience === 1 ? "" : "s"}`
-                    : null,
-                  p.domain ? DOMAIN_LABELS[p.domain] : null,
-                ]
-                  .filter(Boolean)
-                  .join(" · ");
-                return (
-                  <Link
-                    key={p.id}
-                    href={`/students/${p.id}`}
-                    className="flex flex-col gap-3 rounded-card border border-line bg-white p-5 text-brand-ink no-underline shadow-card hover:border-line-strong"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Avatar name={name} photoUrl={p.photoKey} size={48} />
-                      <div className="flex min-w-0 flex-col">
-                        <span className="truncate font-bold">{name}</span>
-                        {meta && (
-                          <span className="truncate text-[13px] text-brand-muted">
-                            {meta}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {p.headline && (
-                      <p className="m-0 line-clamp-2 text-sm text-brand-ink-soft">
-                        {p.headline}
-                      </p>
-                    )}
-                    <div className="mt-auto text-[13px] font-semibold text-brand-muted">
-                      {p._count.projects} published project
-                      {p._count.projects === 1 ? "" : "s"}
-                    </div>
-                  </Link>
-                );
-              })}
+              {profiles.map((p) => (
+                <StudentCard key={p.id} profile={p} />
+              ))}
             </div>
           )}
         </section>

@@ -10,7 +10,7 @@ import { roleHome } from "@/lib/auth/roles";
  * either a Log in link or — for anyone signed in (including recruiters, who
  * browse the public portal) — their name, a link to their home, and Log out.
  */
-export async function SiteHeader() {
+export async function SiteHeader({ searchQuery = "" }: { searchQuery?: string } = {}) {
   const user = await getCurrentUser();
   const firstName = user ? (user.name ?? user.email).split(" ")[0] : null;
 
@@ -42,6 +42,7 @@ export async function SiteHeader() {
           id="site-search"
           name="q"
           type="search"
+          defaultValue={searchQuery}
           placeholder="Search projects, tools or students"
           className="h-[38px] w-full rounded-pill border border-line-input bg-surface-canvas pl-10 pr-4 text-sm text-brand-ink placeholder:text-brand-muted"
         />
