@@ -87,6 +87,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   STUDENT: "Student",
   ADMIN: "Admin",
   SUPER_ADMIN: "Super admin",
+  RECRUITER: "Recruiter",
 };
 
 // The single super admin, per the spec.

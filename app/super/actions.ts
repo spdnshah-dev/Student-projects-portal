@@ -20,13 +20,16 @@ export async function addUserAction(
     .toLowerCase();
   const name = String(formData.get("name") ?? "").trim() || null;
   const roleRaw = String(formData.get("role") ?? "");
+  // One email maps to exactly one role, fixed at creation.
   const role: Role | null =
-    roleRaw === "ADMIN" || roleRaw === "STUDENT" ? roleRaw : null;
+    roleRaw === "ADMIN" || roleRaw === "STUDENT" || roleRaw === "RECRUITER"
+      ? roleRaw
+      : null;
 
   if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
     return { error: "Enter a valid email address." };
   }
-  if (!role) return { error: "Choose a role (student or admin)." };
+  if (!role) return { error: "Choose a role (student, admin or recruiter)." };
   if (email === SUPER_ADMIN_EMAIL) {
     return { error: "That email is reserved for the super admin." };
   }

@@ -29,6 +29,7 @@ enum Role {
   STUDENT
   ADMIN
   SUPER_ADMIN
+  RECRUITER
 }
 
 enum UserStatus {

@@ -1,12 +1,27 @@
 import Link from "next/link";
-import type { Project, StudentProfile, User } from "@prisma/client";
+import type { Domain } from "@prisma/client";
 import { Avatar } from "@/components/ui/Avatar";
 import { DOMAIN_LABELS } from "@/lib/constants";
 import { toolsList } from "@/lib/public";
 
-type CardProject = Project & { profile: StudentProfile & { user: User } };
+// Only the fields the card renders. Public queries never load private contact
+// fields (LinkedIn URL, email), so this type deliberately has none.
+type CardProfile = {
+  yearsExperience: number | null;
+  domain: Domain | null;
+  photoKey: string | null;
+  user: { name: string | null };
+};
+type CardProject = {
+  id: string;
+  profileId: string;
+  title: string;
+  description: string;
+  toolsText: string;
+  profile: CardProfile;
+};
 
-function studentMeta(profile: StudentProfile): string {
+function studentMeta(profile: CardProfile): string {
   return [
     profile.yearsExperience != null
       ? `${profile.yearsExperience} year${profile.yearsExperience === 1 ? "" : "s"}`
@@ -18,7 +33,7 @@ function studentMeta(profile: StudentProfile): string {
 }
 
 export function ProjectCard({ project }: { project: CardProject }) {
-  const name = project.profile.user.name ?? project.profile.user.email;
+  const name = project.profile.user.name ?? "Student";
   const tools = toolsList(project.toolsText).slice(0, 5);
 
   return (

@@ -5,7 +5,7 @@ import { LogoutButton } from "@/components/auth/LogoutButton";
 import { prisma } from "@/lib/prisma";
 import { initials } from "@/lib/initials";
 
-type AdminTab = "overview" | "queue" | "profiles" | "students" | "links";
+type AdminTab = "overview" | "queue" | "profiles" | "students" | "links" | "recruiters";
 
 const NEEDS_REVIEW = ["IN_REVIEW", "CHANGES_IN_REVIEW"] as const;
 
@@ -75,6 +75,9 @@ export async function AdminHeader({
         </NavLink>
         <NavLink href="/admin/links" active={active === "links"}>
           Link problems
+        </NavLink>
+        <NavLink href="/admin/recruiters" active={active === "recruiters"}>
+          Recruiters
         </NavLink>
       </nav>
       <div className="flex-grow" />

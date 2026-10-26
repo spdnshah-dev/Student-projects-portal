@@ -6,6 +6,7 @@ import { OpenProjectDialog } from "@/components/public/OpenProjectDialog";
 import { ShareButton } from "@/components/public/ShareButton";
 import { AssistantWidget } from "@/components/public/AssistantWidget";
 import { Avatar } from "@/components/ui/Avatar";
+import { LinkedInButton } from "@/components/public/LinkedInButton";
 import {
   CATEGORY_LABELS,
   COURSE_COMPLETED_LABELS,
@@ -75,19 +76,8 @@ export default async function PublicProjectPage({
               <span className="truncate text-[13px] text-brand-muted">{studentLine}</span>
             )}
           </div>
-          {profile.linkedinUrl && (
-            <a
-              href={profile.linkedinUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="ml-2 flex h-[38px] items-center gap-2 rounded-pill border-[1.5px] border-[#0A66C2] bg-white px-3 font-semibold text-[#0A66C2] no-underline"
-            >
-              <span className="flex h-5 w-5 items-center justify-center rounded bg-[#0A66C2] text-xs font-bold text-white">
-                in
-              </span>
-              LinkedIn
-            </a>
-          )}
+          {/* Always shown; the URL is only served to recruiters by the endpoint. */}
+          <LinkedInButton profileId={profile.id} compact />
         </div>
         <ShareButton />
       </div>

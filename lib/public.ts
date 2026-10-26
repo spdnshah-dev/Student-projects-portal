@@ -9,6 +9,12 @@ import { prisma } from "@/lib/prisma";
  * For a PUBLISHED item the working row equals its approved version (editing a
  * live item moves it to CHANGES_IN_REVIEW, which these filters exclude), so the
  * row fields are safe to show as "the last approved version".
+ *
+ * Private contact fields (the LinkedIn URL, the account email) are NEVER loaded
+ * by these public queries, so they cannot appear in server-rendered HTML, RSC
+ * payloads, or anything else sent to the browser. The only way to obtain a
+ * student's LinkedIn URL is `getLiveProfileLinkedIn`, which the recruiter-only
+ * endpoint calls after authorizing the server-side session.
  */
 
 const LIVE_PROFILE: Prisma.StudentProfileWhereInput = {
@@ -49,7 +55,7 @@ export async function getPublishedProjects(filters: ProjectFilters = {}) {
     orderBy:
       filters.sort === "az" ? { title: "asc" } : { updatedAt: "desc" },
     take: filters.take,
-    include: { profile: { include: { user: true } } },
+    include: { profile: { omit: { linkedinUrl: true }, include: { user: { select: { name: true } } } } },
   });
 }
 
@@ -69,8 +75,9 @@ export async function getLiveProfiles(q?: string) {
   return prisma.studentProfile.findMany({
     where,
     orderBy: { updatedAt: "desc" },
+    omit: { linkedinUrl: true },
     include: {
-      user: true,
+      user: { select: { name: true } },
       _count: { select: { projects: { where: { state: "PUBLISHED" } } } },
     },
   });
@@ -80,8 +87,9 @@ export async function getLiveProfiles(q?: string) {
 export async function getPublicProfile(id: string) {
   const profile = await prisma.studentProfile.findFirst({
     where: { id, ...LIVE_PROFILE },
+    omit: { linkedinUrl: true },
     include: {
-      user: true,
+      user: { select: { name: true } },
       certificates: { orderBy: { uploadedAt: "asc" } },
       projects: {
         where: { state: "PUBLISHED", approvedVersionId: { not: null } },
@@ -96,7 +104,7 @@ export async function getPublicProfile(id: string) {
 export async function getPublicProject(id: string) {
   return prisma.project.findFirst({
     where: { id, ...PUBLIC_PROJECT },
-    include: { profile: { include: { user: true } } },
+    include: { profile: { omit: { linkedinUrl: true }, include: { user: { select: { name: true } } } } },
   });
 }
 
@@ -111,6 +119,20 @@ export async function getMoreByProfile(profileId: string, excludeId: string) {
     orderBy: { updatedAt: "desc" },
     take: 3,
   });
+}
+
+/**
+ * RECRUITER-ONLY. The one place the LinkedIn URL is read for the public site.
+ * Callers must authorize the session first (see app/api/students/[id]/linkedin).
+ * Only Live profiles resolve, so a non-public student is indistinguishable from
+ * a non-existent one.
+ */
+export async function getLiveProfileLinkedIn(id: string): Promise<string | null> {
+  const row = await prisma.studentProfile.findFirst({
+    where: { id, ...LIVE_PROFILE },
+    select: { linkedinUrl: true },
+  });
+  return row?.linkedinUrl ?? null;
 }
 
 export function toolsList(toolsText: string): string[] {

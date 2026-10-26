@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { answerQuestion, getOrCreateSession } from "@/lib/assistant";
 import { aiAllowed } from "@/lib/rate-limit";
+import { getCurrentUser } from "@/lib/auth/session";
+import { prisma } from "@/lib/prisma";
 
 const COOKIE = "lb_ai";
 const MAX_LEN = 1000;
@@ -24,6 +26,20 @@ export async function POST(req: Request) {
 
   const store = await cookies();
   const session = await getOrCreateSession(store.get(COOKIE)?.value);
+
+  // A signed-in recruiter is classified as a recruiter from the server-side
+  // login session, so the assistant skips the recruiter-or-learner question.
+  // This only shapes the assistant's replies: merely claiming "I'm a recruiter"
+  // in chat never unlocks anything, and the assistant has no access to
+  // LinkedIn URLs at all (they are served solely by the recruiter-only endpoint).
+  const viewer = await getCurrentUser();
+  if (viewer?.role === "RECRUITER" && session.visitorType === "UNKNOWN") {
+    await prisma.aiSession.update({
+      where: { id: session.id },
+      data: { visitorType: "RECRUITER" },
+    });
+    session.visitorType = "RECRUITER";
+  }
 
   if (!(await aiAllowed(session.sessionToken))) {
     const res = NextResponse.json(

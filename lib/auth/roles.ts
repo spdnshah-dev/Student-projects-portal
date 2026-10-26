@@ -9,6 +9,9 @@ export function roleHome(role: Role): string {
       return "/admin";
     case "STUDENT":
       return "/dashboard";
+    case "RECRUITER":
+      // Recruiters browse the public portal like a visitor.
+      return "/";
     default:
       return "/";
   }

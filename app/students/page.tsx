@@ -98,7 +98,7 @@ export default async function StudentsPage({
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {profiles.map((p) => {
-                const name = p.user.name ?? p.user.email;
+                const name = p.user.name ?? "Student";
                 const meta = [
                   p.yearsExperience != null
                     ? `${p.yearsExperience} year${p.yearsExperience === 1 ? "" : "s"}`

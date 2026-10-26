@@ -149,3 +149,45 @@ export async function sendBackProfileAction(
     return fail(e);
   }
 }
+
+// --- Recruiters -----------------------------------------------------------
+
+/**
+ * Add a recruiter by email. Admins and the super admin may do this. The
+ * recruiter then confirms the email and sets their OWN password at
+ * /set-password — we never set it for them. One email maps to one role, fixed.
+ */
+export async function addRecruiterAction(
+  _prev: { ok?: true; error?: string },
+  formData: FormData,
+): Promise<{ ok?: true; error?: string }> {
+  const admin = await requireRole(ADMIN_ROLES);
+
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
+  const name = String(formData.get("name") ?? "").trim() || null;
+
+  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    return { error: "Enter a valid email address." };
+  }
+
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) return { error: "That email already has an account." };
+
+  const created = await prisma.user.create({
+    data: { email, name, role: "RECRUITER", status: "ACTIVE" },
+  });
+  await prisma.auditLog.create({
+    data: {
+      actorId: admin.id,
+      action: "USER_ADD",
+      target: created.id,
+      detail: { email, role: "RECRUITER" },
+    },
+  });
+
+  revalidatePath("/admin/recruiters");
+  revalidatePath("/super/people");
+  return { ok: true };
+}

@@ -6,6 +6,7 @@ import { ProjectCard } from "@/components/public/ProjectCard";
 import { AssistantWidget } from "@/components/public/AssistantWidget";
 import { Avatar } from "@/components/ui/Avatar";
 import { CertificateViewer } from "@/components/public/CertificateViewer";
+import { LinkedInButton } from "@/components/public/LinkedInButton";
 import { COURSE_COMPLETED_LABELS, DOMAIN_LABELS } from "@/lib/constants";
 import { getPublicProfile } from "@/lib/public";
 
@@ -57,19 +58,8 @@ export default async function PublicProfilePage({
                 </div>
               )}
             </div>
-            {profile.linkedinUrl && (
-              <a
-                href={profile.linkedinUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex h-[38px] items-center gap-2 rounded-pill border-[1.5px] border-[#0A66C2] bg-white px-4 font-semibold text-[#0A66C2] no-underline"
-              >
-                <span className="flex h-5 w-5 items-center justify-center rounded bg-[#0A66C2] text-xs font-bold text-white">
-                  in
-                </span>
-                LinkedIn
-              </a>
-            )}
+            {/* Always shown; the URL is only served to recruiters by the endpoint. */}
+            <LinkedInButton profileId={profile.id} />
           </div>
 
           {profile.about && (

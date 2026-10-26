@@ -46,6 +46,7 @@ export function AddUserForm() {
           <select name="role" defaultValue="STUDENT" className={fieldCls}>
             <option value="STUDENT">Student</option>
             <option value="ADMIN">Admin</option>
+            <option value="RECRUITER">Recruiter</option>
           </select>
         </label>
         <button
