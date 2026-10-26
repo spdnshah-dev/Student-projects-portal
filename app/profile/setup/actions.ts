@@ -9,6 +9,7 @@ import { onProfileEdited, submitProfileForReview } from "@/lib/lifecycle";
 import { canApply } from "@/lib/lifecycle-rules";
 import { processCertificateFile } from "@/lib/certificates";
 import { processProfilePhoto } from "@/lib/photo";
+import { friendlyUploadError } from "@/lib/upload-errors";
 import {
   deleteObject,
   storageConfigured,
@@ -155,8 +156,8 @@ export async function uploadPhotoAction(
   } catch (e) {
     if (e instanceof StorageNotConfiguredError) return { error: STORAGE_OFF };
     console.error("[photo upload] failed:", e);
-    const detail = e instanceof Error ? e.message : String(e);
-    return { error: `Upload failed: ${detail}` };
+    // Internal detail stays in the server log; the student gets plain English.
+    return { error: friendlyUploadError(e) };
   }
 }
 
@@ -222,8 +223,8 @@ export async function addCertificateAction(
   } catch (e) {
     if (e instanceof StorageNotConfiguredError) return { error: STORAGE_OFF };
     console.error("[certificate upload] failed:", e);
-    const detail = e instanceof Error ? e.message : String(e);
-    return { error: `Upload failed: ${detail}` };
+    // Internal detail stays in the server log; the student gets plain English.
+    return { error: friendlyUploadError(e) };
   }
 }
 

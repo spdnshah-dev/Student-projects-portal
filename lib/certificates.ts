@@ -6,7 +6,7 @@ import {
   MAX_UPLOAD_BYTES,
   detectFileType,
 } from "@/lib/fileType";
-import { scanForMalware } from "@/lib/malware";
+import { scanForMalware, scannerConfigured } from "@/lib/malware";
 import { putObject } from "@/lib/storage";
 
 /**
@@ -34,9 +34,24 @@ export async function processCertificateFile(file: File): Promise<ProcessResult>
     return { ok: false, error: "Only PDF, PNG or JPG files are allowed." };
   }
 
-  const scan = await scanForMalware(bytes);
+  // PDFs are stored as-is (no re-encoding can sanitise them), so in production
+  // they are only accepted once a malware scanner is configured. Images are
+  // always re-encoded below, which strips any embedded payload.
+  if (
+    type === "pdf" &&
+    process.env.NODE_ENV === "production" &&
+    !scannerConfigured()
+  ) {
+    return {
+      ok: false,
+      error:
+        "PDF certificates can't be accepted until our safety scanner is set up. Please upload a PNG or JPG image of the certificate for now.",
+    };
+  }
+
+  const scan = await scanForMalware(bytes, file.name);
   if (!scan.clean) {
-    return { ok: false, error: "That file did not pass the malware scan." };
+    return { ok: false, error: "That file didn't pass the safety scan, so we can't accept it." };
   }
 
   // Re-encode images so EXIF / hidden metadata is dropped. Orientation is

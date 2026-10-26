@@ -33,9 +33,9 @@ export async function processProfilePhoto(file: File): Promise<PhotoResult> {
     return { ok: false, error: "Use a PNG or JPG image." };
   }
 
-  const scan = await scanForMalware(bytes);
+  const scan = await scanForMalware(bytes, file.name);
   if (!scan.clean) {
-    return { ok: false, error: "That image did not pass the malware scan." };
+    return { ok: false, error: "That image didn't pass the safety scan, so we can't accept it." };
   }
 
   let out: Buffer;

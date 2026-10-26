@@ -5,6 +5,7 @@ import type { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth/session";
 import { SUPER_ADMIN_EMAIL } from "@/lib/constants";
+import { revokeFilesForUser } from "@/lib/revoke-files";
 
 export type ActionResult = { ok?: true; error?: string };
 
@@ -119,6 +120,13 @@ export async function setUserStatusAction(
     where: { id: userId },
     data: { status: disable ? "DISABLED" : "ACTIVE" },
   });
+  // Disabling a student also revokes their uploaded files: the photo and
+  // certificate objects are deleted from storage and the references cleared,
+  // so a previously shared public file link stops working. Re-enabling the
+  // account does not bring the files back; the student re-uploads them.
+  if (disable && target.role === "STUDENT") {
+    await revokeFilesForUser(userId);
+  }
   await prisma.auditLog.create({
     data: {
       actorId: admin.id,

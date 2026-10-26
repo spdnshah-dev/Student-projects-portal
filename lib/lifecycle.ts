@@ -4,6 +4,7 @@ import type {
   StudentProfile,
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { revokeProfileFiles } from "@/lib/revoke-files";
 import { LifecycleError, canApply } from "@/lib/lifecycle-rules";
 
 /**
@@ -327,6 +328,9 @@ export async function takeDownProfile(
       data: { actorId: adminId, action: "PROFILE_TAKE_DOWN", target: id },
     });
   });
+  // Taking a profile down also revokes its uploaded files (photo and
+  // certificate objects), so previously shared public file links stop working.
+  await revokeProfileFiles(id);
 }
 
 export async function restoreProfile(id: string, adminId: string): Promise<void> {
