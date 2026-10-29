@@ -9,8 +9,9 @@ import { randomBytes, createHash } from "crypto";
  *   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET — from Google Cloud Console.
  *   APP_URL — the public origin (e.g. https://student-projects-portal.vercel.app);
  *             the redirect URI registered with Google is
- *             `${APP_URL}/api/auth/google/callback`. When unset, the request's
- *             own origin is used (fine for local development).
+ *             `${APP_URL}/api/auth/google/callback`. NEXTAUTH_URL is accepted
+ *             as an alias. When neither is set, the request's own origin is
+ *             used (fine for local development).
  */
 
 const AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -48,7 +49,8 @@ function clientSecret(): string {
 }
 
 export function redirectUri(requestUrl: string): string {
-  const origin = process.env.APP_URL?.replace(/\/+$/, "") || new URL(requestUrl).origin;
+  const configured = process.env.APP_URL || process.env.NEXTAUTH_URL;
+  const origin = configured?.replace(/\/+$/, "") || new URL(requestUrl).origin;
   return `${origin}${CALLBACK_PATH}`;
 }
 

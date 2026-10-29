@@ -220,7 +220,7 @@ resolved with the product owner:
   `/set-password`).
 - Both paths issue the same signed, httpOnly `lb_session` cookie
   (`lib/auth/session.ts`); all role checks stay server-side.
-- Env: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APP_URL` (see
+- Env: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APP_URL` (or `NEXTAUTH_URL`) (see
   `.env.example`). Register `<APP_URL>/api/auth/google/callback` as the
   redirect URI in Google Cloud Console.
 
