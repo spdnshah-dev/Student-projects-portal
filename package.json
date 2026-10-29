@@ -2,7 +2,7 @@
   "name": "learnbay-projects",
   "version": "0.1.0",
   "private": true,
-  "description": "Learnbay Projects — public showcase portal for student data, AI, and software projects.",
+  "description": "Learnbay Projects \u2014 public showcase portal for student data, AI, and software projects.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -11,7 +11,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test lib/*.test.ts",
+    "test": "node --import tsx --test \"lib/**/*.test.ts\"",
     "format": "prettier --write .",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",

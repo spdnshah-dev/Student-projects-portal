@@ -10,7 +10,8 @@ import { formAllowed } from "@/lib/rate-limit";
 export type FormState = { error?: string };
 
 /**
- * Set a password for an account an admin has already added.
+ * Set a password for an ADMIN account the super admin has already added.
+ * Students never have a password: they sign in with Google.
  *
  * Test phase: the email verification code is skipped (built before launch). We
  * still require that the email already exists as an active account, so only
@@ -40,13 +41,17 @@ export async function setPasswordAction(
         "We couldn't find that email. Ask a Learnbay admin to add it first.",
     };
   }
+  if (user.role === "STUDENT" || user.provider !== "PASSWORD") {
+    return {
+      error:
+        "Students don't use a password. Go back to Log in and use “Sign in with Google” with this Gmail.",
+    };
+  }
 
   await prisma.user.update({
     where: { id: user.id },
     data: { passwordHash: await hashPassword(password) },
   });
   await createSession(user.id, user.role);
-
-  // New students go through consent → profile setup; staff go to their home.
-  redirect(user.role === "STUDENT" ? "/consent" : roleHome(user.role));
+  redirect(roleHome(user.role));
 }

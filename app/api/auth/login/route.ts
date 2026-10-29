@@ -5,9 +5,10 @@ import { createSession } from "@/lib/auth/session";
 import { roleHome } from "@/lib/auth/roles";
 import { loginAllowed } from "@/lib/rate-limit";
 
-// Email + password sign-in, shared by students, admins, and the super admin.
-// Permission is enforced server-side; the response only tells the client where
-// to go next for the signed-in role.
+// Email + password sign-in for admins and the super admin. Students sign in
+// with Google (/api/auth/google/start) and have no password, so a student
+// email here fails like any other wrong credential. Permission is enforced
+// server-side; the response only tells the client where to go next.
 export async function POST(req: Request) {
   let email = "";
   let password = "";
@@ -43,6 +44,7 @@ export async function POST(req: Request) {
 
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user || user.status !== "ACTIVE" || !user.passwordHash) return invalid;
+  if (user.role === "STUDENT" || user.provider !== "PASSWORD") return invalid;
 
   const ok = await verifyPassword(password, user.passwordHash);
   if (!ok) return invalid;

@@ -36,6 +36,13 @@ enum UserStatus {
   DISABLED
 }
 
+// How an account signs in. Students use Google (no password); admins and the
+// super admin use email + password.
+enum AuthProvider {
+  PASSWORD
+  GOOGLE
+}
+
 // The shared lifecycle for both projects and profiles (6 states). Only
 // PUBLISHED is public; a profile's PUBLISHED state is labelled "Live" in the UI.
 enum ItemState {
@@ -139,7 +146,15 @@ model User {
   id           String     @id @default(cuid())
   email        String     @unique
   role         Role
+  // Admins / super admin only. Students have no password (they sign in with
+  // Google) and this stays NULL for them.
   passwordHash String?    @map("password_hash")
+  provider     AuthProvider @default(PASSWORD) @map("auth_provider")
+  // Google account id ("sub") linked on the student's first Google sign-in.
+  // The admin-added email is the key; the sub pins that email to one Google
+  // account from then on.
+  googleSub      String?   @unique @map("google_sub")
+  googleLinkedAt DateTime? @map("google_linked_at")
   // PRIVATE. A student's real name is shown only in the admin / super-admin
   // area; the public site and the AI assistant identify students by studentId.
   name         String?

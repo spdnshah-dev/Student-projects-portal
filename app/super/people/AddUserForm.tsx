@@ -40,7 +40,7 @@ export function AddUserForm() {
             <>
               Student added with ID{" "}
               <span className="font-mono font-bold">{state.studentId}</span>.
-              They can now set a password at /set-password.
+              They can now sign in with Google using that Gmail.
             </>
           ) : (
             "Added. They can now set a password at /set-password."
@@ -67,8 +67,18 @@ export function AddUserForm() {
           <input name="name" type="text" required={isStudent} autoComplete="off" className={fieldCls} />
         </label>
         <label className="flex flex-col gap-1.5">
-          <span className="text-[13px] font-semibold">Email</span>
-          <input name="email" type="email" required placeholder="name@example.com" className={fieldCls} />
+          <span className="text-[13px] font-semibold">
+            {isStudent ? "Gmail address" : "Email"}
+          </span>
+          <input
+            name="email"
+            type="email"
+            required
+            placeholder={isStudent ? "name@gmail.com" : "name@learnbay.co"}
+            pattern={isStudent ? "^[^@\\s]+@gmail\\.com$" : undefined}
+            title={isStudent ? "Students sign in with Google, so this must be an @gmail.com address" : undefined}
+            className={fieldCls}
+          />
         </label>
         {!isStudent && (
           <button
@@ -109,8 +119,9 @@ export function AddUserForm() {
         </div>
       )}
       <p className="m-0 text-[13px] text-brand-muted">
-        A student&apos;s name is private to admins. Visitors see the generated
-        Student ID (course abbreviation, batch date, running number).
+        Students sign in with Google using the Gmail you enter (no password);
+        admins set a password at /set-password. A student&apos;s name is private
+        to admins — visitors see the generated Student ID.
       </p>
     </form>
   );

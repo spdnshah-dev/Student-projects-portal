@@ -61,7 +61,7 @@ export function LoginForm() {
           name="email"
           type="email"
           autoComplete="username"
-          placeholder="name@example.com"
+          placeholder="name@learnbay.co"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -115,9 +115,10 @@ export function LoginForm() {
       <div className="h-px bg-line" />
 
       <div className="flex flex-col gap-1.5">
-        <div className="font-semibold">First time here?</div>
+        <div className="font-semibold">New admin?</div>
         <div className="text-brand-muted">
-          Once a Learnbay admin has added your email, set a password to start.
+          Once the super admin has added your email, set a password to start.
+          Students don&apos;t need one — they sign in with Google above.
         </div>
         <a
           href="/set-password"

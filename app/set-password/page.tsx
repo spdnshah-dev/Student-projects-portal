@@ -27,7 +27,12 @@ export default async function SetPasswordPage() {
               Set your password
             </h1>
             <p className="m-0 text-sm text-brand-muted">
-              A Learnbay admin must have added your email first.
+              For Learnbay admins. The super admin must have added your email
+              first. Students don&apos;t need a password — they{" "}
+              <Link href="/login" className="font-semibold text-brand-accent no-underline">
+                sign in with Google
+              </Link>
+              .
             </p>
             {testMode && (
               <p className="m-0 rounded-[10px] bg-surface-sunken px-3 py-2 text-[13px] text-brand-muted">

@@ -199,16 +199,43 @@ resolved with the product owner:
   external site, new tab) is the page's purpose; the "More projects" cards and
   the footer links stay.
 
+### Sign-in
+
+- **Students sign in with Google only**, using the Gmail an admin pre-added.
+  `/api/auth/google/start` begins an OpenID Connect authorization-code flow
+  with PKCE (scopes `openid email profile`, no offline access);
+  `/api/auth/google/callback` exchanges the code, validates the ID token
+  (issuer, audience, expiry, nonce, `email_verified === true` —
+  `lib/auth/google-claims.ts`) and applies the allowlist gate
+  (`lib/auth/student-gate.ts`): the email must already exist in `users` as an
+  **active STUDENT**, otherwise sign-in is refused with "Your email isn't
+  registered. Ask your Learnbay admin to add you." (a disabled student sees an
+  "account disabled" message) and **no user row is ever created**. On the
+  first successful sign-in the Google account id (`sub`) is linked to the
+  student; later sign-ins must use the same Google account. Students have no
+  password (`password_hash` is NULL, `auth_provider = GOOGLE`), the
+  add-student forms accept only `@gmail.com` addresses, and `/set-password`
+  refuses students.
+- **Admins and the super admin** keep email + password (`/api/auth/login`,
+  `/set-password`).
+- Both paths issue the same signed, httpOnly `lb_session` cookie
+  (`lib/auth/session.ts`); all role checks stay server-side.
+- Env: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APP_URL` (see
+  `.env.example`). Register `<APP_URL>/api/auth/google/callback` as the
+  redirect URI in Google Cloud Console.
+
 ### Test accounts (after `npm run db:seed`)
 
-All seeded accounts share the fixed password **`learnbay-test-2026`** (test
-phase only — not for production):
+Seeded **staff** accounts share the fixed password **`learnbay-test-2026`**
+(test phase only — not for production). Seeded students are demo data with
+`example.com` addresses and cannot log in; to try the student flow, add your
+own Gmail as a student in the admin area and use "Sign in with Google".
 
 | Role        | Email                                               |
 | ----------- | --------------------------------------------------- |
 | Super admin | `spandan@learnbay.co`                               |
 | Admin       | `karan.mehta@example.com`                           |
-| Student     | `riya.sharma@example.com` (+ other sample students) |
+| Student     | `riya.sharma@example.com` (+ others) — demo only, no login |
 
 ## Getting started
 

@@ -1,9 +1,9 @@
 import { cookies } from "next/headers";
-import { createHmac, timingSafeEqual } from "crypto";
 import { redirect } from "next/navigation";
 import type { Role, User } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { roleHome } from "@/lib/auth/roles";
+import { seal, unseal } from "@/lib/auth/sealed";
 
 /**
  * Lightweight, stateless session: a signed (HMAC-SHA256) cookie carrying the
@@ -17,40 +17,16 @@ import { roleHome } from "@/lib/auth/roles";
 const COOKIE = "lb_session";
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
-function secret(): string {
-  const s = process.env.AUTH_SECRET;
-  if (s && s.length > 0) return s;
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("AUTH_SECRET must be set in production.");
-  }
-  // Development fallback only — never used in production (guarded above).
-  return "dev-insecure-secret-change-me";
-}
-
 type Payload = { sub: string; role: Role; exp: number };
 
 function sign(payload: Payload): string {
-  const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
-  const sig = createHmac("sha256", secret()).update(body).digest("base64url");
-  return `${body}.${sig}`;
+  return seal(payload);
 }
 
 function verify(token: string): Payload | null {
-  const [body, sig] = token.split(".");
-  if (!body || !sig) return null;
-  const expected = createHmac("sha256", secret()).update(body).digest("base64url");
-  const a = Buffer.from(sig);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
-  try {
-    const payload = JSON.parse(
-      Buffer.from(body, "base64url").toString(),
-    ) as Payload;
-    if (!payload.exp || payload.exp * 1000 < Date.now()) return null;
-    return payload;
-  } catch {
-    return null;
-  }
+  const payload = unseal<Payload>(token);
+  if (!payload || !payload.exp || payload.exp * 1000 < Date.now()) return null;
+  return payload;
 }
 
 export async function createSession(userId: string, role: Role): Promise<void> {

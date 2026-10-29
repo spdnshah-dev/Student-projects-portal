@@ -22,9 +22,15 @@ const nextConfig = {
   // required by Next.js hydration and Tailwind without a nonce setup; external
   // script origins are still blocked.
   async headers() {
+    // Next.js dev mode evaluates source-mapped code with eval(); production
+    // bundles never do, so 'unsafe-eval' is allowed only outside production.
+    const scriptSrc =
+      process.env.NODE_ENV === "production"
+        ? "script-src 'self' 'unsafe-inline'"
+        : "script-src 'self' 'unsafe-inline' 'unsafe-eval'";
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      scriptSrc,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https://*.public.blob.vercel-storage.com",
       "font-src 'self' data:",

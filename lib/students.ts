@@ -62,6 +62,9 @@ export async function createStudent(
         name: input.name,
         role: "STUDENT",
         status: "ACTIVE",
+        // Students sign in with Google; no password is ever set for them.
+        provider: "GOOGLE",
+        passwordHash: null,
         studentId,
         course: input.course,
         batchStartDate: input.batchStartDate,

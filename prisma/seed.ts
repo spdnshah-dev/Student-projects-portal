@@ -146,17 +146,27 @@ const DRAFT_STUDENT: SeedStudent = {
   ],
 };
 
+/**
+ * Staff get the fixed test password. Students have NO password: they sign in
+ * with Google (seeded demo students use example.com addresses and therefore
+ * cannot log in — add your own Gmail via the admin area to try the student
+ * flow).
+ */
 async function upsertUser(
   email: string,
   name: string,
   role: "STUDENT" | "ADMIN" | "SUPER_ADMIN",
-  passwordHash: string,
+  passwordHash: string | null,
 ) {
   const e = email.toLowerCase();
+  const auth =
+    role === "STUDENT"
+      ? { provider: "GOOGLE" as const, passwordHash: null }
+      : { provider: "PASSWORD" as const, passwordHash };
   return prisma.user.upsert({
     where: { email: e },
-    update: { name, role, status: "ACTIVE", passwordHash },
-    create: { email: e, name, role, status: "ACTIVE", passwordHash },
+    update: { name, role, status: "ACTIVE", ...auth },
+    create: { email: e, name, role, status: "ACTIVE", ...auth },
   });
 }
 
@@ -191,11 +201,10 @@ async function assignStudentId(userId: string, s: SeedStudent) {
 
 async function seedStudent(
   s: SeedStudent,
-  passwordHash: string,
   adminId: string,
   published: boolean,
 ) {
-  const user = await upsertUser(s.email, s.name, "STUDENT", passwordHash);
+  const user = await upsertUser(s.email, s.name, "STUDENT", null);
   await assignStudentId(user.id, s);
 
   const profileData = {
@@ -307,9 +316,9 @@ async function main() {
   );
 
   for (const s of STUDENTS) {
-    await seedStudent(s, passwordHash, admin.id, true);
+    await seedStudent(s, admin.id, true);
   }
-  await seedStudent(DRAFT_STUDENT, passwordHash, admin.id, false);
+  await seedStudent(DRAFT_STUDENT, admin.id, false);
 
   // Scoped-access demo: the test admin (Karan) is assigned only Riya and Meera,
   // so signing in as Karan shows those two but not Imran or Aditya. The super
@@ -332,13 +341,13 @@ async function main() {
 
   /* eslint-disable no-console */
   console.log("\nSeed complete (TEST accounts — fixed passwords, not for production):");
-  console.log("  password for every account:", TEST_PASSWORD);
+  console.log("  password for staff accounts:", TEST_PASSWORD);
   console.log("  super admin:", superAdmin.email);
   console.log("  admin:      ", admin.email);
   console.log(
     "  students:   ",
     STUDENTS.map((s) => s.email).join(", "),
-    `(+1 draft: ${DRAFT_STUDENT.email})`,
+    `(+1 draft: ${DRAFT_STUDENT.email}) — demo data only; students sign in with Google`,
   );
   console.log(
     `  published:   ${STUDENTS.length} profiles, ${projectCount} projects; 1 draft profile/project.\n`,

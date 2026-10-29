@@ -33,8 +33,9 @@ export function AddStudentForm({
       <div className="font-bold">Add a student</div>
       <p className="m-0 text-sm text-brand-muted">
         The student&apos;s name stays private to admins; visitors see the Student
-        ID, which is generated from the course and batch. The student sets their
-        own password at <code>/set-password</code>.
+        ID, which is generated from the course and batch. Enter the
+        student&apos;s <strong>Gmail</strong> address: they sign in with Google
+        using it, with no password.
       </p>
       {state.error && (
         <div role="alert" className="text-[13px] font-medium text-state-sentback">
@@ -44,8 +45,8 @@ export function AddStudentForm({
       {state.ok && (
         <div role="status" className="text-[13px] font-medium text-state-published">
           Student added with ID{" "}
-          <span className="font-mono font-bold">{state.studentId}</span>. Ask them
-          to set their password.
+          <span className="font-mono font-bold">{state.studentId}</span>. They can
+          now sign in with Google using that Gmail.
         </div>
       )}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[1.4fr_1.6fr_1.4fr_1fr_auto] lg:items-end">
@@ -54,8 +55,16 @@ export function AddStudentForm({
           <input name="name" type="text" required autoComplete="off" className={fieldCls} />
         </label>
         <label className="flex flex-col gap-1.5">
-          <span className="text-[13px] font-semibold">Email</span>
-          <input name="email" type="email" required placeholder="name@example.com" className={fieldCls} />
+          <span className="text-[13px] font-semibold">Gmail address</span>
+          <input
+            name="email"
+            type="email"
+            required
+            placeholder="name@gmail.com"
+            pattern="^[^@\s]+@gmail\.com$"
+            title="Students sign in with Google, so this must be an @gmail.com address"
+            className={fieldCls}
+          />
         </label>
         <label className="flex flex-col gap-1.5">
           <span className="text-[13px] font-semibold">Course</span>
