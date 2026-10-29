@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import type { CourseCompleted, Domain } from "@prisma/client";
+import type { Domain } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth/session";
 import { onProfileEdited, submitProfileForReview } from "@/lib/lifecycle";
@@ -16,7 +16,7 @@ import {
   StorageNotConfiguredError,
 } from "@/lib/storage";
 import { formAllowed } from "@/lib/rate-limit";
-import { COURSE_COMPLETED_LABELS, DOMAIN_LABELS } from "@/lib/constants";
+import { DOMAIN_LABELS } from "@/lib/constants";
 
 export type FormState = { error?: string; ok?: boolean };
 
@@ -62,27 +62,10 @@ export async function saveProfileAction(
   }
 
   const domain = asEnum<Domain>(formData.get("domain"), DOMAIN_LABELS);
-  const courseCompleted = asEnum<CourseCompleted>(
-    formData.get("courseCompleted"),
-    COURSE_COMPLETED_LABELS,
-  );
 
-  const linkedinRaw = String(formData.get("linkedinUrl") ?? "").trim();
-  let linkedinUrl: string | null = null;
-  if (linkedinRaw !== "") {
-    // Accept what people naturally paste (e.g. "linkedin.com/in/name" or
-    // "www.linkedin.com/..."): upgrade http→https and add the scheme if it's
-    // missing, then confirm it really is a linkedin.com address.
-    let normalized = linkedinRaw.replace(/^http:\/\//i, "https://");
-    if (!/^https:\/\//i.test(normalized)) normalized = `https://${normalized}`;
-    if (!/^https:\/\/([a-z0-9-]+\.)*linkedin\.com\//i.test(normalized)) {
-      return {
-        error: "Enter a LinkedIn profile link, e.g. linkedin.com/in/your-name",
-      };
-    }
-    linkedinUrl = normalized;
-  }
-
+  // The name is PRIVATE data: stored on the account for admins, never shown on
+  // the public site (which uses the Student ID). The course and Student ID are
+  // set by the admin who added the student and are not editable here.
   await prisma.$transaction([
     prisma.user.update({ where: { id: user.id }, data: { name: fullName } }),
     prisma.studentProfile.update({
@@ -92,8 +75,6 @@ export async function saveProfileAction(
         about,
         yearsExperience,
         domain,
-        courseCompleted,
-        linkedinUrl,
       },
     }),
   ]);

@@ -1,7 +1,7 @@
 # Learnbay Projects
 
 Public showcase portal where Learnbay students publish the data, AI, and
-software projects they build during their course. Recruiters browse it to find
+software projects they build during their course. Visitors (including recruiters, who need no login) browse it to find
 candidates; prospective learners browse it to see what they would build.
 
 The **technical build specification** is the single source of truth; the Claude
@@ -151,8 +151,9 @@ The frozen design and the tech doc (source of truth) differ in a few places;
 resolved with the product owner:
 
 - **Added** profile fields the design shows but the doc's table omits: years of
-  experience, work domain, LinkedIn, profile photo (upload later), and
-  certificate name + issuer. Also kept the doc's `headline` / `about`.
+  experience, work domain, profile photo, and certificate name + issuer. Also
+  kept the doc's `headline` / `about`. (A LinkedIn field existed for a while and
+  was removed — see "Student identity" below.)
 - **Project domain:** the doc says domain is per-project, so Add Project has a
   domain selector even though that board omits one.
 - **AI assistant files:** followed the doc — one site-wide assistant reading
@@ -161,6 +162,42 @@ resolved with the product owner:
 - **Deferred:** profile photo + certificate image uploads (file-upload
   milestone), live-link "Test" button (link-checker milestone), and the
   dashboard view-analytics / "who viewed" charts (no data model yet).
+
+### Student identity, course and the locked project page
+
+- **Students are public by Student ID, never by name.** The admin enters the
+  student's name (and the student may edit it), but it is private data shown
+  only in the admin / super-admin area. Every public and student-facing surface
+  — profile header, project page, project cards, "More projects by …", the
+  students list, search, and the AI assistant — shows the **Student ID**.
+  `lib/public.ts` loads only `PUBLIC_USER_SELECT` (`{ studentId }`) from the
+  account, so the name is not in any public HTML, RSC payload or JSON; the
+  assistant's index (`lib/embeddings.ts`) is built from the Student ID too and
+  its prompt forbids naming students. Public search matches Student ID and
+  headline, not names.
+- **Admin "Add student"** (admin Students page and super-admin People page)
+  captures name, email, **Course** (Data Science; Business Analytics & Data
+  Analytics; Gen AI & Agentic AI; Software Engineering; Forward Deployed
+  Engineering; Cloud & DevOps; Applied AI Practitioner) and **Batch start
+  date**, and generates the Student ID server-side:
+  `ABBR-DDMMYYYY-NNN` (DS, BADA, GAAI, SDE, FDE, CD, AAP), e.g. the 2nd student
+  in Gen AI & Agentic AI starting 05 Jan 2026 → `GAAI-05012026-002`. The counter
+  comes from `student_id_sequences` (one row per course + batch, atomic upsert
+  inside the add-student transaction, never recomputed from a live count) and
+  `users.student_id` is UNIQUE. `lib/student-id.ts` has the pure helpers and
+  tests; `lib/students.ts` the transaction. This course replaced the old
+  per-profile "course completed" choice.
+- **No LinkedIn, no recruiter login.** Students no longer provide a LinkedIn URL
+  and the column is dropped; the recruiter role (which existed only to unlock
+  LinkedIn) is removed from the `Role` enum along with its pages, guards and
+  account-creation paths. Roles are `STUDENT`, `ADMIN`, `SUPER_ADMIN`; visitors
+  have no login. The assistant's recruiter-or-learner question remains as a
+  chat branch (learners are pointed to the skill-gap test) and unlocks nothing.
+- **The project page is a locked landing page:** its top bar shows only the
+  Learnbay brand (no links), there is no back-to-profile control, no Share
+  button and no "See their profile" link. "Open project" (the student's
+  external site, new tab) is the page's purpose; the "More projects" cards and
+  the footer links stay.
 
 ### Test accounts (after `npm run db:seed`)
 

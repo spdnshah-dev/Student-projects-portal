@@ -2,7 +2,8 @@ import { randomUUID } from "crypto";
 import type { EmbeddingSourceType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { embedText } from "@/lib/gemini";
-import { CATEGORY_LABELS, COURSE_COMPLETED_LABELS, DOMAIN_LABELS } from "@/lib/constants";
+import { CATEGORY_LABELS, COURSE_LABELS, DOMAIN_LABELS } from "@/lib/constants";
+import { publicStudentLabel } from "@/lib/student-id";
 
 /**
  * The vector pipeline. When a profile or project is approved its text is split
@@ -11,6 +12,9 @@ import { CATEGORY_LABELS, COURSE_COMPLETED_LABELS, DOMAIN_LABELS } from "@/lib/c
  *
  * All student-entered text here is DATA for retrieval — it is never treated as
  * instructions (see lib/assistant.ts for how the prompt keeps them separate).
+ *
+ * PRIVACY: the indexed text identifies a student by Student ID only. Their real
+ * name is never embedded, so the assistant cannot repeat it.
  */
 
 const CHUNK_TARGET = 700; // characters
@@ -65,18 +69,21 @@ export async function removeSource(
 export async function reindexProfile(profileId: string): Promise<void> {
   const profile = await prisma.studentProfile.findUnique({
     where: { id: profileId },
-    include: { user: true, certificates: true },
+    include: {
+      user: { select: { studentId: true, course: true } },
+      certificates: true,
+    },
   });
   if (!profile) return;
-  const name = profile.user.name ?? "A Learnbay student";
+  const label = publicStudentLabel(profile.user.studentId);
   const parts: string[] = [];
-  parts.push(`Student: ${name}.`);
+  parts.push(`Student ID: ${label}.`);
   if (profile.headline) parts.push(profile.headline);
   if (profile.yearsExperience != null)
     parts.push(`${profile.yearsExperience} years of experience.`);
   if (profile.domain) parts.push(`Works in ${DOMAIN_LABELS[profile.domain]}.`);
-  if (profile.courseCompleted)
-    parts.push(`Completed the ${COURSE_COMPLETED_LABELS[profile.courseCompleted]} course at Learnbay.`);
+  if (profile.user.course)
+    parts.push(`Learnbay course: ${COURSE_LABELS[profile.user.course]}.`);
   if (profile.about) parts.push(profile.about);
   if (profile.certificates.length) {
     parts.push(
@@ -93,12 +100,12 @@ export async function reindexProfile(profileId: string): Promise<void> {
 export async function reindexProject(projectId: string): Promise<void> {
   const project = await prisma.project.findUnique({
     where: { id: projectId },
-    include: { profile: { include: { user: true } } },
+    include: { profile: { include: { user: { select: { studentId: true } } } } },
   });
   if (!project) return;
-  const name = project.profile.user.name ?? "A Learnbay student";
+  const label = publicStudentLabel(project.profile.user.studentId);
   const parts: string[] = [
-    `Project: ${project.title}, by ${name}.`,
+    `Project: ${project.title}, by student ${label}.`,
     `Category: ${CATEGORY_LABELS[project.category]}. Domain: ${DOMAIN_LABELS[project.domain]}.`,
     project.description,
   ];

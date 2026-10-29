@@ -1,36 +1,48 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth/session";
 import { SUPER_ADMIN_EMAIL } from "@/lib/constants";
 import { revokeFilesForUser } from "@/lib/revoke-files";
+import { assignStudentId, createStudent } from "@/lib/students";
+import { COURSE_LABELS } from "@/lib/constants";
+import { parseBatchDate } from "@/lib/student-id";
+import type { Course } from "@prisma/client";
+import { parseStudentForm } from "@/lib/student-form";
 
-export type ActionResult = { ok?: true; error?: string };
+export type ActionResult = { ok?: true; error?: string; studentId?: string };
 
-/** Add a student or admin by email. They set a password via /set-password. */
+/**
+ * Add an admin by email, or a student (name, email, course, batch start date —
+ * the Student ID is generated). They set a password via /set-password.
+ */
 export async function addUserAction(
   _prev: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
   const admin = await requireRole("SUPER_ADMIN");
 
+  const roleRaw = String(formData.get("role") ?? "");
+  if (roleRaw === "STUDENT") {
+    const parsed = parseStudentForm(formData);
+    if ("error" in parsed) return { error: parsed.error };
+    const result = await createStudent(parsed, admin);
+    if (!result.ok) return { error: result.error };
+    revalidatePath("/super/people");
+    revalidatePath("/admin/students");
+    return { ok: true, studentId: result.studentId };
+  }
+  if (roleRaw !== "ADMIN") return { error: "Choose a role (student or admin)." };
+
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase();
   const name = String(formData.get("name") ?? "").trim() || null;
-  const roleRaw = String(formData.get("role") ?? "");
-  // One email maps to exactly one role, fixed at creation.
-  const role: Role | null =
-    roleRaw === "ADMIN" || roleRaw === "STUDENT" || roleRaw === "RECRUITER"
-      ? roleRaw
-      : null;
 
   if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
     return { error: "Enter a valid email address." };
   }
-  if (!role) return { error: "Choose a role (student, admin or recruiter)." };
   if (email === SUPER_ADMIN_EMAIL) {
     return { error: "That email is reserved for the super admin." };
   }
@@ -39,14 +51,14 @@ export async function addUserAction(
   if (existing) return { error: "That email already has an account." };
 
   const created = await prisma.user.create({
-    data: { email, name, role, status: "ACTIVE" },
+    data: { email, name, role: "ADMIN", status: "ACTIVE" },
   });
   await prisma.auditLog.create({
     data: {
       actorId: admin.id,
       action: "USER_ADD",
       target: created.id,
-      detail: { email, role },
+      detail: { email, role: "ADMIN" },
     },
   });
 
@@ -138,4 +150,27 @@ export async function setUserStatusAction(
 
   revalidatePath("/super/people");
   return { ok: true };
+}
+
+/**
+ * Give a student who was added before Student IDs existed their course, batch
+ * and generated ID. Only the super admin can do this; students who already
+ * have an ID are refused.
+ */
+export async function assignStudentIdAction(
+  userId: string,
+  courseRaw: string,
+  batchRaw: string,
+): Promise<ActionResult> {
+  const admin = await requireRole("SUPER_ADMIN");
+  if (!(courseRaw in COURSE_LABELS)) return { error: "Choose the student's course." };
+  const batchStartDate = parseBatchDate(batchRaw);
+  if (!batchStartDate) return { error: "Choose the batch start date." };
+
+  const result = await assignStudentId(userId, courseRaw as Course, batchStartDate, admin);
+  if (!result.ok) return { error: result.error };
+
+  revalidatePath("/super/people");
+  revalidatePath("/admin/students");
+  return { ok: true, studentId: result.studentId };
 }

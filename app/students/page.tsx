@@ -32,6 +32,7 @@ export default async function StudentsPage({
           </h1>
           <p className="m-0 text-[15px] text-brand-muted">
             Browse the students behind the projects and open their profiles.
+            Students are shown by their Student ID.
           </p>
           <div className="mt-3">
             <AudienceToggle active="students" />
@@ -60,8 +61,8 @@ export default async function StudentsPage({
                 type="search"
                 name="q"
                 defaultValue={q}
-                placeholder="Search by student name"
-                aria-label="Search students by name"
+                placeholder="Search by Student ID"
+                aria-label="Search students by Student ID"
                 className="h-11 w-full rounded-pill border border-line-input bg-white pl-10 pr-4 text-sm text-brand-ink"
               />
             </div>

@@ -16,14 +16,15 @@ export function OpenProjectDialog({
   liveUrl,
   title,
   description,
-  studentName,
+  studentLabel,
   studentMeta,
 }: {
   projectId: string;
   liveUrl: string;
   title: string;
   description: string;
-  studentName: string;
+  /** The student's public identity (their Student ID), never their name. */
+  studentLabel: string;
   studentMeta?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -147,11 +148,11 @@ export function OpenProjectDialog({
                   {title}
                 </h2>
                 <div className="flex items-center gap-2 text-brand-muted">
-                  <span className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${avatarClasses(studentName)}`}>
-                    {initials(studentName)}
+                  <span className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${avatarClasses(studentLabel)}`}>
+                    {initials(studentLabel)}
                   </span>
                   <span>
-                    <span className="font-semibold text-brand-ink">{studentName}</span>
+                    <span className="font-semibold text-brand-ink">{studentLabel}</span>
                     {studentMeta ? ` · ${studentMeta}` : ""}
                   </span>
                 </div>

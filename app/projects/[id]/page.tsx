@@ -1,18 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Logo } from "@/components/brand/Logo";
 import { SiteFooter } from "@/components/brand/SiteFooter";
 import { OpenProjectDialog } from "@/components/public/OpenProjectDialog";
-import { ShareButton } from "@/components/public/ShareButton";
 import { AssistantWidget } from "@/components/public/AssistantWidget";
-import { Avatar } from "@/components/ui/Avatar";
-import { LinkedInButton } from "@/components/public/LinkedInButton";
-import {
-  CATEGORY_LABELS,
-  COURSE_COMPLETED_LABELS,
-  DOMAIN_LABELS,
-} from "@/lib/constants";
+import { CATEGORY_LABELS, COURSE_LABELS, DOMAIN_LABELS } from "@/lib/constants";
 import { getMoreByProfile, getPublicProject, toolsList } from "@/lib/public";
+import { publicStudentLabel } from "@/lib/student-id";
+import { prisma } from "@/lib/prisma";
 
 // Renders live data from the database on each request.
 export const dynamic = "force-dynamic";
@@ -28,6 +24,12 @@ export async function generateMetadata({
   return { title: project.title, description: project.description };
 }
 
+/**
+ * The project page is a locked landing page: its one job is the "Open project"
+ * button. The top bar carries only the Learnbay brand (no links), there is no
+ * way back to the student's profile, and the student is identified by their
+ * Student ID only.
+ */
 export default async function PublicProjectPage({
   params,
 }: {
@@ -38,48 +40,24 @@ export default async function PublicProjectPage({
   if (!project) notFound();
 
   const profile = project.profile;
-  const name = profile.user.name ?? "Student";
+  const label = publicStudentLabel(profile.user.studentId);
   const tools = toolsList(project.toolsText);
-  const more = await getMoreByProfile(project.profileId, project.id);
-
-  const studentLine = [
-    profile.courseCompleted ? COURSE_COMPLETED_LABELS[profile.courseCompleted] : null,
-    profile.yearsExperience != null && profile.domain
-      ? `${profile.yearsExperience} years in ${DOMAIN_LABELS[profile.domain]}`
-      : profile.domain
-        ? DOMAIN_LABELS[profile.domain]
-        : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const [more, account] = await Promise.all([
+    getMoreByProfile(project.profileId, project.id),
+    // The course is public (it is part of the Student ID); nothing else from
+    // the account is loaded here.
+    prisma.user.findUnique({
+      where: { id: profile.userId },
+      select: { course: true },
+    }),
+  ]);
+  const courseLabel = account?.course ? COURSE_LABELS[account.course] : undefined;
 
   return (
     <div className="flex min-h-screen flex-col bg-surface-canvas">
-      {/* Learnbay bar — only on the project page, never inside the student's site */}
-      <div className="flex flex-wrap items-center gap-3 border-b border-line bg-white px-5 py-2.5">
-        <Link
-          href={`/students/${project.profileId}`}
-          className="flex h-9 items-center gap-1.5 rounded-field px-2 font-semibold text-brand-ink no-underline"
-        >
-          <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" className="fill-none stroke-current" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M16 10H4M9 5l-5 5 5 5" />
-          </svg>
-          Profile
-        </Link>
-        <div className="flex min-w-0 flex-grow items-center gap-3">
-          <Avatar name={name} photoUrl={project.profile.photoKey} size={38} />
-          <div className="flex min-w-0 flex-col">
-            <Link href={`/students/${project.profileId}`} className="font-bold text-brand-ink no-underline">
-              {name}
-            </Link>
-            {studentLine && (
-              <span className="truncate text-[13px] text-brand-muted">{studentLine}</span>
-            )}
-          </div>
-          {/* Always shown; the URL is only served to recruiters by the endpoint. */}
-          <LinkedInButton profileId={profile.id} compact />
-        </div>
-        <ShareButton />
+      {/* Learnbay bar — brand only, no navigation */}
+      <div className="flex items-center border-b border-line bg-white px-5 py-2.5">
+        <Logo href={null} />
       </div>
 
       <main className="mx-auto flex w-full max-w-shell flex-grow flex-col gap-6 px-6 py-7">
@@ -96,6 +74,10 @@ export default async function PublicProjectPage({
           <h1 className="m-0 text-[30px] font-bold leading-tight tracking-tight">
             {project.title}
           </h1>
+          <div className="text-sm text-[#A9B4C8]">
+            Built by student <span className="font-semibold text-white">{label}</span>
+            {courseLabel ? ` · ${courseLabel}` : ""}
+          </div>
           <p className="m-0 max-w-[760px] leading-relaxed text-[#D5DCEA] text-pretty">
             {project.description}
           </p>
@@ -119,12 +101,8 @@ export default async function PublicProjectPage({
               liveUrl={project.liveUrl}
               title={project.title}
               description={project.description}
-              studentName={name}
-              studentMeta={
-                profile.courseCompleted
-                  ? COURSE_COMPLETED_LABELS[profile.courseCompleted]
-                  : undefined
-              }
+              studentLabel={label}
+              studentMeta={courseLabel}
             />
             <p className="m-0 max-w-[420px] text-[13px] leading-snug text-[#A9B4C8] text-pretty">
               It runs on the student&apos;s own hosting, outside Learnbay, and
@@ -133,20 +111,10 @@ export default async function PublicProjectPage({
           </div>
         </div>
 
-        {/* More by student */}
+        {/* More by the same student */}
         {more.length > 0 && (
           <section className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="m-0 text-lg font-bold">
-                More projects by {name.split(" ")[0]}
-              </h2>
-              <Link
-                href={`/students/${project.profileId}`}
-                className="font-semibold text-brand-accent no-underline"
-              >
-                See their profile
-              </Link>
-            </div>
+            <h2 className="m-0 text-lg font-bold">More projects by {label}</h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               {more.map((m) => (
                 <Link
@@ -163,11 +131,6 @@ export default async function PublicProjectPage({
             </div>
           </section>
         )}
-
-        <p className="text-[13px] text-brand-muted text-pretty">
-          The &ldquo;Ask about this project&rdquo; assistant panel from the
-          design arrives with the AI assistant milestone.
-        </p>
       </main>
 
       <SiteFooter />

@@ -29,7 +29,6 @@ enum Role {
   STUDENT
   ADMIN
   SUPER_ADMIN
-  RECRUITER
 }
 
 enum UserStatus {
@@ -77,12 +76,16 @@ enum Category {
   AGENTIC_AI
 }
 
-enum CourseCompleted {
+// The Learnbay course a student is enrolled in. Set by the admin who adds the
+// student; it also forms the prefix of their Student ID (see lib/student-id.ts).
+enum Course {
   DATA_SCIENCE
   BUSINESS_ANALYTICS_AND_DATA_ANALYTICS
+  GEN_AI_AND_AGENTIC_AI
+  SOFTWARE_ENGINEERING
+  FORWARD_DEPLOYED_ENGINEERING
   CLOUD_AND_DEVOPS
-  GENERATIVE_AI_AND_AGENTIC_AI
-  SOFTWARE_DEVELOPMENT
+  APPLIED_AI_PRACTITIONER
 }
 
 enum Domain {
@@ -137,10 +140,19 @@ model User {
   email        String     @unique
   role         Role
   passwordHash String?    @map("password_hash")
+  // PRIVATE. A student's real name is shown only in the admin / super-admin
+  // area; the public site and the AI assistant identify students by studentId.
   name         String?
   status       UserStatus @default(ACTIVE)
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  // Student-only fields, set by the admin who adds the student. The Student ID
+  // (e.g. GAAI-05012026-002) is generated server-side from course + batch via
+  // StudentIdSequence and is the student's public identity.
+  studentId      String?   @unique @map("student_id")
+  course         Course?
+  batchStartDate DateTime? @map("batch_start_date") @db.Date
 
   // A user has at most one student profile; admins/super admin have none.
   profile StudentProfile?
@@ -175,6 +187,19 @@ model AdminAssignment {
   @@map("admin_assignments")
 }
 
+// Per course + batch counter behind Student IDs. The counter only ever moves
+// forward (it is never recomputed from a live count), so an ID is never
+// reused even if a student is later deleted. Allocation happens inside the
+// add-student transaction with an atomic upsert (see lib/student-id.ts).
+model StudentIdSequence {
+  course         Course
+  batchStartDate DateTime @map("batch_start_date") @db.Date
+  lastCounter    Int      @default(0) @map("last_counter")
+
+  @@id([course, batchStartDate])
+  @@map("student_id_sequences")
+}
+
 // ---------------------------------------------------------------------------
 // Profiles & projects
 // ---------------------------------------------------------------------------
@@ -185,10 +210,8 @@ model StudentProfile {
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   headline        String?
   about           String?
-  courseCompleted CourseCompleted? @map("course_completed")
   yearsExperience Int?             @map("years_experience")
   domain          Domain? // the domain the student works in (profile-level)
-  linkedinUrl     String?          @map("linkedin_url")
   photoKey        String?          @map("photo_key") // storage key for the profile photo
   consentAt       DateTime?        @map("consent_at") // placeholder consent accepted
   state           ItemState        @default(DRAFT)

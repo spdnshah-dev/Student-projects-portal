@@ -8,9 +8,15 @@
  * These accounts are NON-PRODUCTION. Before the real launch this seed is
  * removed, email-code sign-in is turned on, and real passwords replace these.
  */
-import { PrismaClient, type Category, type Domain } from "@prisma/client";
+import {
+  PrismaClient,
+  type Category,
+  type Course,
+  type Domain,
+} from "@prisma/client";
 import { hashPassword } from "../lib/auth/password";
 import { SUPER_ADMIN_EMAIL } from "../lib/constants";
+import { formatStudentId, parseBatchDate } from "../lib/student-id";
 
 const prisma = new PrismaClient();
 
@@ -30,15 +36,11 @@ type SeedProject = {
 type SeedStudent = {
   slug: string;
   email: string;
-  name: string;
+  name: string; // private — the public site shows the generated Student ID
   headline: string;
   about: string;
-  courseCompleted:
-    | "DATA_SCIENCE"
-    | "BUSINESS_ANALYTICS_AND_DATA_ANALYTICS"
-    | "CLOUD_AND_DEVOPS"
-    | "GENERATIVE_AI_AND_AGENTIC_AI"
-    | "SOFTWARE_DEVELOPMENT";
+  course: Course;
+  batchStartDate: string; // YYYY-MM-DD
   projects: SeedProject[];
 };
 
@@ -50,7 +52,8 @@ const STUDENTS: SeedStudent[] = [
     headline: "Data Scientist · 3 years · BFSI",
     about:
       "Data scientist focused on risk and customer analytics in banking. I like turning messy transaction data into models a team can actually act on.",
-    courseCompleted: "DATA_SCIENCE",
+    course: "DATA_SCIENCE",
+    batchStartDate: "2026-01-05",
     projects: [
       {
         slug: "churn-predictor",
@@ -81,7 +84,8 @@ const STUDENTS: SeedStudent[] = [
     headline: "ML Engineer · 6 years · Healthcare Services",
     about:
       "Machine-learning engineer working on clinical text. I build tools that save clinicians time without getting in the way of their judgement.",
-    courseCompleted: "GENERATIVE_AI_AND_AGENTIC_AI",
+    course: "GEN_AI_AND_AGENTIC_AI",
+    batchStartDate: "2026-01-05",
     projects: [
       {
         slug: "clinical-notes-summariser",
@@ -102,7 +106,8 @@ const STUDENTS: SeedStudent[] = [
     headline: "Analytics Lead · 8 years · Operations",
     about:
       "Operations analyst turned data engineer. I care about forecasts that hold up in the real world and dashboards people trust.",
-    courseCompleted: "BUSINESS_ANALYTICS_AND_DATA_ANALYTICS",
+    course: "BUSINESS_ANALYTICS_AND_DATA_ANALYTICS",
+    batchStartDate: "2026-02-02",
     projects: [
       {
         slug: "warehouse-demand-planner",
@@ -125,7 +130,8 @@ const DRAFT_STUDENT: SeedStudent = {
   name: "Aditya Verma",
   headline: "Data Scientist · 5 years · BFSI",
   about: "Building a fraud-detection project; profile not submitted yet.",
-  courseCompleted: "DATA_SCIENCE",
+  course: "DATA_SCIENCE",
+  batchStartDate: "2026-01-05",
   projects: [
     {
       slug: "fraud-alert-monitor",
@@ -154,6 +160,35 @@ async function upsertUser(
   });
 }
 
+/**
+ * Give a seeded student their course, batch and Student ID, using the same
+ * per-batch counter the app uses. Re-running the seed keeps existing IDs.
+ */
+async function assignStudentId(userId: string, s: SeedStudent) {
+  const batchStartDate = parseBatchDate(s.batchStartDate);
+  if (!batchStartDate) throw new Error(`Bad seed batch date for ${s.slug}`);
+  const existing = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { studentId: true },
+  });
+  // Already has an ID (from an earlier seed run or the migration backfill):
+  // leave the ID and the course/batch it encodes untouched.
+  if (existing?.studentId) return;
+  await prisma.$transaction(async (tx) => {
+    const rows = await tx.$queryRaw<{ last_counter: number }[]>`
+      INSERT INTO "student_id_sequences" ("course", "batch_start_date", "last_counter")
+      VALUES (${s.course}::"Course", ${batchStartDate}::date, 1)
+      ON CONFLICT ("course", "batch_start_date")
+      DO UPDATE SET "last_counter" = "student_id_sequences"."last_counter" + 1
+      RETURNING "last_counter"`;
+    const studentId = formatStudentId(s.course, batchStartDate, Number(rows[0].last_counter));
+    await tx.user.update({
+      where: { id: userId },
+      data: { studentId, course: s.course, batchStartDate },
+    });
+  });
+}
+
 async function seedStudent(
   s: SeedStudent,
   passwordHash: string,
@@ -161,11 +196,11 @@ async function seedStudent(
   published: boolean,
 ) {
   const user = await upsertUser(s.email, s.name, "STUDENT", passwordHash);
+  await assignStudentId(user.id, s);
 
   const profileData = {
     headline: s.headline,
     about: s.about,
-    courseCompleted: s.courseCompleted,
     state: (published ? "PUBLISHED" : "DRAFT") as "PUBLISHED" | "DRAFT",
   };
   const profile = await prisma.studentProfile.upsert({
@@ -178,7 +213,6 @@ async function seedStudent(
     const snapshot = {
       headline: s.headline,
       about: s.about,
-      courseCompleted: s.courseCompleted,
     };
     const pv = await prisma.profileVersion.upsert({
       where: { id: `seed-pv-${s.slug}` },

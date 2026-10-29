@@ -2,24 +2,21 @@
 
 import { useActionState } from "react";
 import { saveProfileAction, type FormState } from "./actions";
-import {
-  COURSE_COMPLETED_LABELS,
-  COURSE_COMPLETED_OPTIONS,
-  DOMAIN_LABELS,
-  DOMAIN_OPTIONS,
-} from "@/lib/constants";
+import { DOMAIN_LABELS, DOMAIN_OPTIONS } from "@/lib/constants";
 
 const initial: FormState = {};
 
 export type ProfileDefaults = {
   fullName: string;
   email: string;
+  /** Read-only, set by the admin who added the student. */
+  studentId: string;
+  /** Read-only course label, set by the admin who added the student. */
+  course: string;
   headline: string;
   about: string;
   yearsExperience: string;
   domain: string;
-  courseCompleted: string;
-  linkedinUrl: string;
 };
 
 const fieldCls =
@@ -58,6 +55,10 @@ export function ProfileForm({ defaults }: { defaults: ProfileDefaults }) {
             required
             className={fieldCls}
           />
+          <div className={hintCls}>
+            Private — only Learnbay admins see your name. Visitors see your
+            Student ID.
+          </div>
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="pf-email" className={labelCls}>
@@ -72,6 +73,39 @@ export function ProfileForm({ defaults }: { defaults: ProfileDefaults }) {
           />
           <div className={hintCls}>
             Added by a Learnbay admin. Not shown on your public profile.
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="pf-student-id" className={labelCls}>
+            Student ID
+          </label>
+          <input
+            id="pf-student-id"
+            type="text"
+            defaultValue={defaults.studentId || "Not assigned yet"}
+            disabled
+            className="h-[42px] w-full rounded-[10px] border border-line-strong bg-surface-sunken px-3.5 text-sm font-semibold text-brand-ink-soft"
+          />
+          <div className={hintCls}>
+            This is how visitors see you on the public site.
+          </div>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="pf-course" className={labelCls}>
+            Course
+          </label>
+          <input
+            id="pf-course"
+            type="text"
+            defaultValue={defaults.course || "Not set"}
+            disabled
+            className="h-[42px] w-full rounded-[10px] border border-line-strong bg-surface-sunken px-3.5 text-sm text-brand-muted"
+          />
+          <div className={hintCls}>
+            Set by a Learnbay admin. Ask them if it needs changing.
           </div>
         </div>
       </div>
@@ -137,43 +171,6 @@ export function ProfileForm({ defaults }: { defaults: ProfileDefaults }) {
               </option>
             ))}
           </select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="pf-course" className={labelCls}>
-            Course completed
-          </label>
-          <select
-            id="pf-course"
-            name="courseCompleted"
-            defaultValue={defaults.courseCompleted}
-            className={fieldCls}
-          >
-            <option value="">Select a course</option>
-            {COURSE_COMPLETED_OPTIONS.map((c) => (
-              <option key={c} value={c}>
-                {COURSE_COMPLETED_LABELS[c]}
-              </option>
-            ))}
-          </select>
-          <div className={hintCls}>The Learnbay course you finished.</div>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="pf-linkedin" className={labelCls}>
-            LinkedIn profile link{" "}
-            <span className="font-normal text-brand-muted">(optional)</span>
-          </label>
-          <input
-            id="pf-linkedin"
-            name="linkedinUrl"
-            type="text"
-            inputMode="url"
-            defaultValue={defaults.linkedinUrl}
-            placeholder="linkedin.com/in/your-name"
-            className={fieldCls}
-          />
         </div>
       </div>
 

@@ -42,8 +42,8 @@ export default async function ConsentPage() {
               <li className="flex gap-2.5">
                 <span className="font-bold text-brand-accent">•</span>
                 <span>
-                  Your name, photo, years of experience, domain and the course
-                  you completed.
+                  Your Student ID (not your name), photo, years of experience,
+                  domain and your Learnbay course.
                 </span>
               </li>
               <li className="flex gap-2.5">

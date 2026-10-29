@@ -9,7 +9,7 @@ import { requireRole } from "@/lib/auth/session";
 import { ADMIN_ROLES } from "@/lib/auth/roles";
 import { canAccessStudent } from "@/lib/admin-scope";
 import { prisma } from "@/lib/prisma";
-import { COURSE_COMPLETED_LABELS, DOMAIN_LABELS } from "@/lib/constants";
+import { COURSE_LABELS, DOMAIN_LABELS } from "@/lib/constants";
 
 export const metadata: Metadata = { title: "Review a profile" };
 
@@ -70,6 +70,13 @@ export default async function ProfileReviewPage({
             <div className="flex flex-col">
               <span className="text-lg font-bold">{name}</span>
               <span className="text-[13px] text-brand-muted">{profile.user.email}</span>
+              <span className="text-[13px] text-brand-muted">
+                Student ID:{" "}
+                <span className="font-mono font-semibold text-brand-ink-soft">
+                  {profile.user.studentId ?? "not assigned"}
+                </span>{" "}
+                · shown to visitors instead of the name
+              </span>
             </div>
           </div>
 
@@ -79,17 +86,13 @@ export default async function ProfileReviewPage({
               {profile.yearsExperience != null ? String(profile.yearsExperience) : ""}
             </Row>
             <Row label="Domain">{profile.domain ? DOMAIN_LABELS[profile.domain] : ""}</Row>
-            <Row label="Course completed">
-              {profile.courseCompleted ? COURSE_COMPLETED_LABELS[profile.courseCompleted] : ""}
+            <Row label="Course">
+              {profile.user.course ? COURSE_LABELS[profile.user.course] : ""}
             </Row>
-            <Row label="LinkedIn">
-              {profile.linkedinUrl ? (
-                <a href={profile.linkedinUrl} target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-accent no-underline">
-                  {profile.linkedinUrl}
-                </a>
-              ) : (
-                ""
-              )}
+            <Row label="Batch start">
+              {profile.user.batchStartDate
+                ? profile.user.batchStartDate.toISOString().slice(0, 10)
+                : ""}
             </Row>
             <div className="sm:col-span-2">
               <Row label="About">

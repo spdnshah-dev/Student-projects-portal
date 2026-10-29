@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AdminHeader } from "@/components/admin/AdminHeader";
+import { AddStudentForm } from "@/components/admin/AddStudentForm";
 import { ItemStatus } from "@/components/admin/ItemStatus";
 import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
@@ -8,6 +9,8 @@ import { requireRole } from "@/lib/auth/session";
 import { ADMIN_ROLES } from "@/lib/auth/roles";
 import { scopedStudentIds, studentUserScope } from "@/lib/admin-scope";
 import { prisma } from "@/lib/prisma";
+import { COURSE_LABELS } from "@/lib/constants";
+import { addStudentAction } from "@/app/admin/actions";
 
 export const metadata: Metadata = { title: "Students" };
 
@@ -35,14 +38,19 @@ export default async function StudentsPage() {
         <div className="flex flex-col gap-1.5">
           <h1 className="m-0 text-2xl font-bold tracking-tight">Students</h1>
           <p className="m-0 text-sm text-brand-muted">
-            Every student, for looking up. Adding and disabling students is done
+            Add students and look them up. Names are private to admins; the
+            public site shows each student&apos;s ID. Disabling accounts is done
             by the super admin.
           </p>
         </div>
 
+        <AddStudentForm action={addStudentAction} />
+
         <section className="overflow-hidden rounded-card border border-line bg-white shadow-card">
-          <div className="grid grid-cols-[2fr_1fr_0.8fr_auto] gap-4 border-b border-line px-5 py-3 text-xs font-bold uppercase tracking-wider text-brand-muted">
+          <div className="grid grid-cols-[2fr_1.4fr_1.4fr_1fr_0.7fr_auto] gap-4 border-b border-line px-5 py-3 text-xs font-bold uppercase tracking-wider text-brand-muted">
             <div>Student</div>
+            <div>Student ID</div>
+            <div>Course · batch</div>
             <div>Profile</div>
             <div>Published</div>
             <div />
@@ -58,7 +66,7 @@ export default async function StudentsPage() {
                 return (
                   <li
                     key={s.id}
-                    className="grid grid-cols-[2fr_1fr_0.8fr_auto] items-center gap-4 border-b border-line px-5 py-3.5 last:border-b-0"
+                    className="grid grid-cols-[2fr_1.4fr_1.4fr_1fr_0.7fr_auto] items-center gap-4 border-b border-line px-5 py-3.5 last:border-b-0"
                   >
                     <div className="flex min-w-0 items-center gap-2.5">
                       <span className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold ${avatarClasses(name)}`}>
@@ -75,6 +83,19 @@ export default async function StudentsPage() {
                           {s.email}
                         </span>
                       </div>
+                    </div>
+                    <span className="truncate font-mono text-[13px] font-semibold text-brand-ink-soft">
+                      {s.studentId ?? "—"}
+                    </span>
+                    <div className="flex min-w-0 flex-col text-[13px]">
+                      <span className="truncate text-brand-ink-soft">
+                        {s.course ? COURSE_LABELS[s.course] : "—"}
+                      </span>
+                      <span className="truncate text-brand-muted">
+                        {s.batchStartDate
+                          ? s.batchStartDate.toISOString().slice(0, 10)
+                          : ""}
+                      </span>
                     </div>
                     <div>
                       {s.profile ? (

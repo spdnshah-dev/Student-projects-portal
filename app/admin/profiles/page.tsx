@@ -9,7 +9,7 @@ import { requireRole } from "@/lib/auth/session";
 import { ADMIN_ROLES } from "@/lib/auth/roles";
 import { scopedStudentIds, profileScope } from "@/lib/admin-scope";
 import { prisma } from "@/lib/prisma";
-import { COURSE_COMPLETED_LABELS } from "@/lib/constants";
+import { COURSE_LABELS } from "@/lib/constants";
 import { timeAgo } from "@/lib/time";
 
 export const metadata: Metadata = { title: "Profiles" };
@@ -110,8 +110,13 @@ export default async function ProfileQueuePage({
                         </span>
                       </div>
                     </div>
-                    <span className="truncate text-sm text-brand-ink-soft">
-                      {pf.courseCompleted ? COURSE_COMPLETED_LABELS[pf.courseCompleted] : "—"}
+                    <span className="flex min-w-0 flex-col text-sm text-brand-ink-soft">
+                      <span className="truncate font-mono text-[13px]">
+                        {pf.user.studentId ?? "—"}
+                      </span>
+                      <span className="truncate text-[13px] text-brand-muted">
+                        {pf.user.course ? COURSE_LABELS[pf.user.course] : "—"}
+                      </span>
                     </span>
                     {tab === "live" ? (
                       <ItemStatus state={pf.state} kind="profile" />

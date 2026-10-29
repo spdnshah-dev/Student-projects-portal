@@ -7,8 +7,9 @@ import { roleHome } from "@/lib/auth/roles";
 
 /**
  * The public site header: the Learnbay Projects lockup, a search field, and
- * either a Log in link or — for anyone signed in (including recruiters, who
- * browse the public portal) — their name, a link to their home, and Log out.
+ * either a Log in link or — for a signed-in student or admin — their first
+ * name, a link to their home, and Log out. (Only the signed-in person sees
+ * their own name here; it is never shown to anyone else.)
  */
 export async function SiteHeader({ searchQuery = "" }: { searchQuery?: string } = {}) {
   const user = await getCurrentUser();
@@ -24,7 +25,7 @@ export async function SiteHeader({ searchQuery = "" }: { searchQuery?: string } 
         className="relative hidden min-w-0 flex-shrink items-center md:flex md:w-[420px]"
       >
         <label htmlFor="site-search" className="sr-only">
-          Search projects, tools or students
+          Search projects, tools or student IDs
         </label>
         <svg
           width="18"
@@ -43,7 +44,7 @@ export async function SiteHeader({ searchQuery = "" }: { searchQuery?: string } 
           name="q"
           type="search"
           defaultValue={searchQuery}
-          placeholder="Search projects, tools or students"
+          placeholder="Search projects, tools or student IDs"
           className="h-[38px] w-full rounded-pill border border-line-input bg-surface-canvas pl-10 pr-4 text-sm text-brand-ink placeholder:text-brand-muted"
         />
       </form>
@@ -52,14 +53,12 @@ export async function SiteHeader({ searchQuery = "" }: { searchQuery?: string } 
 
       {user ? (
         <div className="flex items-center gap-3">
-          {user.role !== "RECRUITER" && (
-            <Link
-              href={roleHome(user.role)}
-              className="hidden h-[38px] items-center px-2 text-sm font-semibold text-brand-muted no-underline sm:flex"
-            >
-              My dashboard
-            </Link>
-          )}
+          <Link
+            href={roleHome(user.role)}
+            className="hidden h-[38px] items-center px-2 text-sm font-semibold text-brand-muted no-underline sm:flex"
+          >
+            My dashboard
+          </Link>
           <span className="hidden text-sm font-semibold sm:inline">{firstName}</span>
           <LogoutButton />
         </div>

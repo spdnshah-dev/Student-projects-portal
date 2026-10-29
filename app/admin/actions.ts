@@ -14,6 +14,8 @@ import { LifecycleError } from "@/lib/lifecycle-rules";
 import { reindexProfile, reindexProject, removeSource } from "@/lib/embeddings";
 import { prisma } from "@/lib/prisma";
 import { canAccessStudent } from "@/lib/admin-scope";
+import { createStudent } from "@/lib/students";
+import { parseStudentForm, type AddStudentState } from "@/lib/student-form";
 import type { User } from "@prisma/client";
 
 const NO_ACCESS = "You don't have access to this student.";
@@ -150,44 +152,27 @@ export async function sendBackProfileAction(
   }
 }
 
-// --- Recruiters -----------------------------------------------------------
+// --- Students ---------------------------------------------------------------
 
 /**
- * Add a recruiter by email. Admins and the super admin may do this. The
- * recruiter then confirms the email and sets their OWN password at
- * /set-password — we never set it for them. One email maps to one role, fixed.
+ * Add a student: name, email, course and batch start date. The Student ID is
+ * generated inside the transaction (see lib/students.ts). Admins and the super
+ * admin may do this; a regular admin is automatically given review access to
+ * the student they add. The student then sets their own password at
+ * /set-password.
  */
-export async function addRecruiterAction(
-  _prev: { ok?: true; error?: string },
+export async function addStudentAction(
+  _prev: AddStudentState,
   formData: FormData,
-): Promise<{ ok?: true; error?: string }> {
+): Promise<AddStudentState> {
   const admin = await requireRole(ADMIN_ROLES);
+  const parsed = parseStudentForm(formData);
+  if ("error" in parsed) return { error: parsed.error };
 
-  const email = String(formData.get("email") ?? "")
-    .trim()
-    .toLowerCase();
-  const name = String(formData.get("name") ?? "").trim() || null;
+  const result = await createStudent(parsed, admin);
+  if (!result.ok) return { error: result.error };
 
-  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-    return { error: "Enter a valid email address." };
-  }
-
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) return { error: "That email already has an account." };
-
-  const created = await prisma.user.create({
-    data: { email, name, role: "RECRUITER", status: "ACTIVE" },
-  });
-  await prisma.auditLog.create({
-    data: {
-      actorId: admin.id,
-      action: "USER_ADD",
-      target: created.id,
-      detail: { email, role: "RECRUITER" },
-    },
-  });
-
-  revalidatePath("/admin/recruiters");
+  revalidatePath("/admin/students");
   revalidatePath("/super/people");
-  return { ok: true };
+  return { ok: true, studentId: result.studentId };
 }

@@ -10,11 +10,7 @@ import { requireRole } from "@/lib/auth/session";
 import { ADMIN_ROLES } from "@/lib/auth/roles";
 import { canAccessStudent } from "@/lib/admin-scope";
 import { prisma } from "@/lib/prisma";
-import {
-  CATEGORY_LABELS,
-  COURSE_COMPLETED_LABELS,
-  DOMAIN_LABELS,
-} from "@/lib/constants";
+import { CATEGORY_LABELS, COURSE_LABELS, DOMAIN_LABELS } from "@/lib/constants";
 import { timeAgo } from "@/lib/time";
 
 export const metadata: Metadata = { title: "Review a project" };
@@ -148,15 +144,16 @@ export default async function ProjectReviewPage({
                 </span>
                 <div className="flex min-w-0 flex-col">
                   <span className="font-bold">{studentName}</span>
+                  <span className="font-mono text-[13px] text-brand-ink-soft">
+                    {student.studentId ?? "No student ID"}
+                  </span>
                   <span className="text-[13px] text-brand-muted">
                     {[
                       project.profile.yearsExperience != null
                         ? `${project.profile.yearsExperience} yrs`
                         : null,
                       project.profile.domain ? DOMAIN_LABELS[project.profile.domain] : null,
-                      project.profile.courseCompleted
-                        ? COURSE_COMPLETED_LABELS[project.profile.courseCompleted]
-                        : null,
+                      student.course ? COURSE_LABELS[student.course] : null,
                     ]
                       .filter(Boolean)
                       .join(" · ")}

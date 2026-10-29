@@ -14,9 +14,10 @@ export const dynamic = "force-dynamic";
 
 /**
  * Results for the header search box, which promises "projects, tools or
- * students": projects match on title / description / tools, students on name
- * / headline. Both come from the public queries, so the same visibility rules
- * (and the recruiter-only contact rule) apply here as everywhere else.
+ * student IDs": projects match on title / description / tools, students on
+ * Student ID / headline (never on name — the public site does not know
+ * students' names). Both come from the public queries, so the same visibility
+ * rules apply here as everywhere else.
  */
 export default async function SearchPage({
   searchParams,
@@ -49,7 +50,7 @@ export default async function SearchPage({
           <p className="m-0 text-[15px] text-brand-muted">
             {q
               ? `${total} match${total === 1 ? "" : "es"} across projects and students.`
-              : "Type a project, tool or student name in the search box above."}
+              : "Type a project, tool or Student ID in the search box above."}
           </p>
         </section>
 

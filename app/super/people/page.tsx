@@ -8,6 +8,7 @@ import { ROLE_LABELS, SUPER_ADMIN_EMAIL } from "@/lib/constants";
 import { AddUserForm } from "./AddUserForm";
 import { StatusButton } from "./StatusButton";
 import { AssignStudentsButton } from "./AssignStudentsButton";
+import { AssignStudentIdButton } from "./AssignStudentIdButton";
 
 export const metadata: Metadata = { title: "Admins & students" };
 
@@ -45,8 +46,10 @@ export default async function PeoplePage() {
             Admins &amp; students
           </h1>
           <p className="m-0 text-sm text-brand-muted">
-            Add people by email and disable or re-enable accounts. Disabling a
-            student hides their profile and projects from the public.
+            Add people by email and disable or re-enable accounts. Students get
+            a generated Student ID, which is what visitors see instead of their
+            name. Disabling a student hides their profile and projects from the
+            public.
           </p>
         </div>
 
@@ -79,7 +82,14 @@ export default async function PeoplePage() {
                       </span>
                     </div>
                   </div>
-                  <div className="text-sm">{ROLE_LABELS[u.role]}</div>
+                  <div className="flex min-w-0 flex-col text-sm">
+                    <span>{ROLE_LABELS[u.role]}</span>
+                    {u.role === "STUDENT" && (
+                      <span className="truncate font-mono text-[13px] text-brand-ink-soft">
+                        {u.studentId ?? "No student ID yet"}
+                      </span>
+                    )}
+                  </div>
                   <div>
                     {u.status === "ACTIVE" ? (
                       <Badge tone="chip">Active</Badge>
@@ -88,6 +98,9 @@ export default async function PeoplePage() {
                     )}
                   </div>
                   <div className="flex items-center gap-3 justify-self-end">
+                    {u.role === "STUDENT" && !u.studentId && (
+                      <AssignStudentIdButton userId={u.id} studentName={name} />
+                    )}
                     {u.role === "ADMIN" && (
                       <AssignStudentsButton
                         adminId={u.id}

@@ -10,12 +10,15 @@ import { prisma } from "@/lib/prisma";
  * live item moves it to CHANGES_IN_REVIEW, which these filters exclude), so the
  * row fields are safe to show as "the last approved version".
  *
- * Private contact fields (the LinkedIn URL, the account email) are NEVER loaded
- * by these public queries, so they cannot appear in server-rendered HTML, RSC
- * payloads, or anything else sent to the browser. The only way to obtain a
- * student's LinkedIn URL is `getLiveProfileLinkedIn`, which the recruiter-only
- * endpoint calls after authorizing the server-side session.
+ * PRIVACY: a student's real name and email are NEVER loaded by these queries.
+ * The only account field the public sees is the Student ID (PUBLIC_USER_SELECT),
+ * so the name cannot appear in server-rendered HTML, RSC payloads, search
+ * results, or anything else sent to the browser. Admin screens use their own
+ * queries.
  */
+
+/** The only fields of a student's account the public may see. */
+export const PUBLIC_USER_SELECT = { studentId: true } as const;
 
 const LIVE_PROFILE: Prisma.StudentProfileWhereInput = {
   state: "PUBLISHED",
@@ -55,7 +58,7 @@ export async function getPublishedProjects(filters: ProjectFilters = {}) {
     orderBy:
       filters.sort === "az" ? { title: "asc" } : { updatedAt: "desc" },
     take: filters.take,
-    include: { profile: { omit: { linkedinUrl: true }, include: { user: { select: { name: true } } } } },
+    include: { profile: { include: { user: { select: PUBLIC_USER_SELECT } } } },
   });
 }
 
@@ -63,21 +66,25 @@ export async function countPublishedProjects(): Promise<number> {
   return prisma.project.count({ where: PUBLIC_PROJECT });
 }
 
+/**
+ * Live profiles, optionally filtered. Students are searched by their public
+ * Student ID and headline — never by name, which would let a visitor confirm
+ * a person is enrolled by typing their name.
+ */
 export async function getLiveProfiles(q?: string) {
   const where: Prisma.StudentProfileWhereInput = { ...LIVE_PROFILE };
   const term = q?.trim();
   if (term) {
     where.OR = [
-      { user: { name: { contains: term, mode: "insensitive" } } },
+      { user: { studentId: { contains: term, mode: "insensitive" } } },
       { headline: { contains: term, mode: "insensitive" } },
     ];
   }
   return prisma.studentProfile.findMany({
     where,
     orderBy: { updatedAt: "desc" },
-    omit: { linkedinUrl: true },
     include: {
-      user: { select: { name: true } },
+      user: { select: PUBLIC_USER_SELECT },
       _count: { select: { projects: { where: { state: "PUBLISHED" } } } },
     },
   });
@@ -87,9 +94,8 @@ export async function getLiveProfiles(q?: string) {
 export async function getPublicProfile(id: string) {
   const profile = await prisma.studentProfile.findFirst({
     where: { id, ...LIVE_PROFILE },
-    omit: { linkedinUrl: true },
     include: {
-      user: { select: { name: true } },
+      user: { select: PUBLIC_USER_SELECT },
       certificates: { orderBy: { uploadedAt: "asc" } },
       projects: {
         where: { state: "PUBLISHED", approvedVersionId: { not: null } },
@@ -104,7 +110,7 @@ export async function getPublicProfile(id: string) {
 export async function getPublicProject(id: string) {
   return prisma.project.findFirst({
     where: { id, ...PUBLIC_PROJECT },
-    include: { profile: { omit: { linkedinUrl: true }, include: { user: { select: { name: true } } } } },
+    include: { profile: { include: { user: { select: PUBLIC_USER_SELECT } } } },
   });
 }
 
@@ -119,20 +125,6 @@ export async function getMoreByProfile(profileId: string, excludeId: string) {
     orderBy: { updatedAt: "desc" },
     take: 3,
   });
-}
-
-/**
- * RECRUITER-ONLY. The one place the LinkedIn URL is read for the public site.
- * Callers must authorize the session first (see app/api/students/[id]/linkedin).
- * Only Live profiles resolve, so a non-public student is indistinguishable from
- * a non-existent one.
- */
-export async function getLiveProfileLinkedIn(id: string): Promise<string | null> {
-  const row = await prisma.studentProfile.findFirst({
-    where: { id, ...LIVE_PROFILE },
-    select: { linkedinUrl: true },
-  });
-  return row?.linkedinUrl ?? null;
 }
 
 export function toolsList(toolsText: string): string[] {

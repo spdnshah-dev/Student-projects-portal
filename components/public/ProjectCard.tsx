@@ -3,14 +3,16 @@ import type { Domain } from "@prisma/client";
 import { Avatar } from "@/components/ui/Avatar";
 import { DOMAIN_LABELS } from "@/lib/constants";
 import { toolsList } from "@/lib/public";
+import { publicStudentLabel } from "@/lib/student-id";
 
-// Only the fields the card renders. Public queries never load private contact
-// fields (LinkedIn URL, email), so this type deliberately has none.
+// Only the fields the card renders. Public queries never load a student's
+// name or email, so this type deliberately has neither: the student is
+// identified by their Student ID.
 type CardProfile = {
   yearsExperience: number | null;
   domain: Domain | null;
   photoKey: string | null;
-  user: { name: string | null };
+  user: { studentId: string | null };
 };
 type CardProject = {
   id: string;
@@ -33,7 +35,7 @@ function studentMeta(profile: CardProfile): string {
 }
 
 export function ProjectCard({ project }: { project: CardProject }) {
-  const name = project.profile.user.name ?? "Student";
+  const label = publicStudentLabel(project.profile.user.studentId);
   const tools = toolsList(project.toolsText).slice(0, 5);
 
   return (
@@ -42,9 +44,9 @@ export function ProjectCard({ project }: { project: CardProject }) {
         href={`/students/${project.profileId}`}
         className="relative z-10 flex min-h-9 w-fit items-center gap-2.5 text-brand-ink no-underline hover:underline"
       >
-        <Avatar name={name} photoUrl={project.profile.photoKey} size={32} />
+        <Avatar name={label} photoUrl={project.profile.photoKey} size={32} />
         <span className="flex flex-col">
-          <span className="font-semibold">{name}</span>
+          <span className="font-semibold">{label}</span>
           <span className="text-xs text-brand-muted">{studentMeta(project.profile)}</span>
         </span>
       </Link>

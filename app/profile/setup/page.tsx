@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { StudentHeader } from "@/components/student/StudentHeader";
 import { requireRole } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
+import { COURSE_LABELS } from "@/lib/constants";
 import { ProfileForm, type ProfileDefaults } from "./ProfileForm";
 import { PhotoUpload } from "./PhotoUpload";
 import { CertificateManager } from "./CertificateManager";
@@ -48,13 +49,13 @@ export default async function ProfileSetupPage() {
   const defaults: ProfileDefaults = {
     fullName: user.name ?? "",
     email: user.email,
+    studentId: user.studentId ?? "",
+    course: user.course ? COURSE_LABELS[user.course] : "",
     headline: profile.headline ?? "",
     about: profile.about ?? "",
     yearsExperience:
       profile.yearsExperience != null ? String(profile.yearsExperience) : "",
     domain: profile.domain ?? "",
-    courseCompleted: profile.courseCompleted ?? "",
-    linkedinUrl: profile.linkedinUrl ?? "",
   };
 
   const detailsDone = Boolean(user.name && profile.about);
@@ -69,8 +70,8 @@ export default async function ProfileSetupPage() {
             Complete your profile
           </h1>
           <p className="m-0 text-sm text-brand-muted">
-            This is what visitors see on your public profile. You can change it
-            any time.
+            This is what visitors see on your public profile, under your Student
+            ID. You can change it any time.
           </p>
         </div>
 

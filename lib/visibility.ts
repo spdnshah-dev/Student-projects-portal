@@ -1,9 +1,4 @@
-import type {
-  Category,
-  CourseCompleted,
-  Domain,
-  Prisma,
-} from "@prisma/client";
+import type { Category, Domain, Prisma } from "@prisma/client";
 
 /**
  * The two public-visibility rules (StateMachine board):
@@ -61,10 +56,8 @@ export type ProjectSnapshot = {
 export type ProfileSnapshot = {
   headline: string | null;
   about: string | null;
-  courseCompleted: CourseCompleted | null;
   yearsExperience: number | null;
   domain: Domain | null;
-  linkedinUrl: string | null;
   photoKey: string | null;
 };
 

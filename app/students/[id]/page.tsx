@@ -6,9 +6,9 @@ import { ProjectCard } from "@/components/public/ProjectCard";
 import { AssistantWidget } from "@/components/public/AssistantWidget";
 import { Avatar } from "@/components/ui/Avatar";
 import { CertificateViewer } from "@/components/public/CertificateViewer";
-import { LinkedInButton } from "@/components/public/LinkedInButton";
-import { COURSE_COMPLETED_LABELS, DOMAIN_LABELS } from "@/lib/constants";
+import { DOMAIN_LABELS } from "@/lib/constants";
 import { getPublicProfile } from "@/lib/public";
+import { publicStudentLabel } from "@/lib/student-id";
 
 // Renders live data from the database on each request.
 export const dynamic = "force-dynamic";
@@ -21,7 +21,7 @@ export async function generateMetadata({
   const { id } = await params;
   const profile = await getPublicProfile(id);
   if (!profile) return { title: "Profile not found" };
-  return { title: profile.user.name ?? "Student profile" };
+  return { title: `Student ${publicStudentLabel(profile.user.studentId)}` };
 }
 
 export default async function PublicProfilePage({
@@ -33,7 +33,8 @@ export default async function PublicProfilePage({
   const profile = await getPublicProfile(id);
   if (!profile) notFound();
 
-  const name = profile.user.name ?? "Student";
+  // Students are identified in public by their Student ID only.
+  const label = publicStudentLabel(profile.user.studentId);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -43,9 +44,15 @@ export default async function PublicProfilePage({
         {/* Sidebar */}
         <aside className="flex w-full flex-shrink-0 flex-col gap-5 rounded-card border border-line bg-white p-6 shadow-card lg:w-[320px] lg:sticky lg:top-6">
           <div className="flex flex-col items-start gap-3">
-            <Avatar name={name} photoUrl={profile.photoKey} size={64} />
+            <Avatar name={label} photoUrl={profile.photoKey} size={64} />
             <div className="flex flex-col gap-1.5">
-              <h1 className="m-0 text-xl font-bold tracking-tight">{name}</h1>
+              <div className="text-xs font-bold uppercase tracking-wider text-brand-muted">
+                Student ID
+              </div>
+              <h1 className="m-0 text-xl font-bold tracking-tight">{label}</h1>
+              {profile.headline && (
+                <div className="text-sm text-brand-ink-soft">{profile.headline}</div>
+              )}
               {profile.yearsExperience != null && (
                 <div className="text-sm text-brand-muted">
                   {profile.yearsExperience} year
@@ -58,8 +65,6 @@ export default async function PublicProfilePage({
                 </div>
               )}
             </div>
-            {/* Always shown; the URL is only served to recruiters by the endpoint. */}
-            <LinkedInButton profileId={profile.id} />
           </div>
 
           {profile.about && (
@@ -68,21 +73,6 @@ export default async function PublicProfilePage({
               <p className="m-0 whitespace-pre-line text-sm leading-relaxed text-brand-ink-soft text-pretty">
                 {profile.about}
               </p>
-            </>
-          )}
-
-          {profile.courseCompleted && (
-            <>
-              <div className="h-px bg-line" />
-              <div className="flex flex-col gap-2">
-                <div className="text-xs font-bold uppercase tracking-wider text-brand-muted">
-                  Course completed
-                </div>
-                <div className="font-semibold">
-                  {COURSE_COMPLETED_LABELS[profile.courseCompleted]}
-                </div>
-                <div className="text-[13px] text-brand-muted">Learnbay program</div>
-              </div>
             </>
           )}
 

@@ -1,6 +1,6 @@
 import type {
   Category,
-  CourseCompleted,
+  Course,
   Domain,
   ItemState,
   Role,
@@ -20,13 +20,16 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   AGENTIC_AI: "Agentic AI",
 };
 
-export const COURSE_COMPLETED_LABELS: Record<CourseCompleted, string> = {
+// The student's Learnbay course. Chosen by the admin when adding the student;
+// the abbreviation that prefixes the Student ID lives in lib/student-id.ts.
+export const COURSE_LABELS: Record<Course, string> = {
   DATA_SCIENCE: "Data Science",
-  BUSINESS_ANALYTICS_AND_DATA_ANALYTICS:
-    "Business Analytics and Data Analytics",
-  CLOUD_AND_DEVOPS: "Cloud and DevOps",
-  GENERATIVE_AI_AND_AGENTIC_AI: "Generative AI and Agentic AI",
-  SOFTWARE_DEVELOPMENT: "Software Development",
+  BUSINESS_ANALYTICS_AND_DATA_ANALYTICS: "Business Analytics & Data Analytics",
+  GEN_AI_AND_AGENTIC_AI: "Gen AI & Agentic AI",
+  SOFTWARE_ENGINEERING: "Software Engineering",
+  FORWARD_DEPLOYED_ENGINEERING: "Forward Deployed Engineering",
+  CLOUD_AND_DEVOPS: "Cloud & DevOps",
+  APPLIED_AI_PRACTITIONER: "Applied AI Practitioner",
 };
 
 export const DOMAIN_LABELS: Record<Domain, string> = {
@@ -57,9 +60,7 @@ export const DOMAIN_LABELS: Record<Domain, string> = {
 
 // Ordered option lists for building <select>s, preserving the spec's order.
 export const CATEGORY_OPTIONS = Object.keys(CATEGORY_LABELS) as Category[];
-export const COURSE_COMPLETED_OPTIONS = Object.keys(
-  COURSE_COMPLETED_LABELS,
-) as CourseCompleted[];
+export const COURSE_OPTIONS = Object.keys(COURSE_LABELS) as Course[];
 export const DOMAIN_OPTIONS = Object.keys(DOMAIN_LABELS) as Domain[];
 
 /**
@@ -87,7 +88,6 @@ export const ROLE_LABELS: Record<Role, string> = {
   STUDENT: "Student",
   ADMIN: "Admin",
   SUPER_ADMIN: "Super admin",
-  RECRUITER: "Recruiter",
 };
 
 // The single super admin, per the spec.

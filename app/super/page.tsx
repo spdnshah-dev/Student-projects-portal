@@ -17,6 +17,7 @@ const ACTION_LABEL: Record<string, string> = {
   PROFILE_TAKE_DOWN: "took a profile down",
   PROFILE_RESTORE: "restored a profile",
   USER_ADD: "added an account",
+  STUDENT_ID_ASSIGN: "assigned a student ID",
   USER_DISABLE: "disabled an account",
   USER_ENABLE: "re-enabled an account",
 };
