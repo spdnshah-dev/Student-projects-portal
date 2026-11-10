@@ -5,16 +5,16 @@ import { initials, avatarClasses } from "@/lib/initials";
 
 /** How long the popup stays before the student's project opens in a new tab. */
 const HOLD_SECONDS = 5;
+// Browsers allow a page to open a new tab only within ~5 s of the visitor's
+// click. Each countdown tick is a little under a second so the tab opens just
+// inside that window; if a browser still refuses, we fall back to a button.
+const TICK_MS = 940;
 
 /**
- * "Open project": shows a short Learnbay interstitial for HOLD_SECONDS, then
- * opens the student's live site in a new tab.
- *
- * Browsers only let a page open a new tab during a click, so the tab is opened
- * (blank) in the click handler and pointed at the project when the countdown
- * ends. Its `opener` is severed so the student's site cannot reach this page.
- * If a popup blocker refuses the tab, the countdown ends on an "Open project"
- * button instead, which opens it from a direct click.
+ * "Open project": shows the Learnbay interstitial for HOLD_SECONDS, then opens
+ * the student's live site in a NEW tab. Nothing opens before the countdown
+ * ends. The new tab's `opener` is severed so the student's site cannot reach
+ * this page.
  */
 export function OpenProjectDialog({
   liveUrl,
@@ -33,67 +33,58 @@ export function OpenProjectDialog({
   const [open, setOpen] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(HOLD_SECONDS);
   const [blocked, setBlocked] = useState(false);
-  const tabRef = useRef<Window | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const openedRef = useRef(false);
 
   function stopTimer() {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = null;
   }
 
-  function navigateTab() {
+  /** Open the project in a new tab. Returns false if the browser blocked it. */
+  function openProjectTab(): boolean {
+    const tab = window.open(liveUrl, "_blank");
+    if (!tab) return false;
+    tab.opener = null;
+    return true;
+  }
+
+  function finish() {
+    if (openedRef.current) return;
     stopTimer();
-    const tab = tabRef.current;
-    tabRef.current = null;
-    if (tab && !tab.closed) {
-      tab.location.href = liveUrl;
+    if (openProjectTab()) {
+      openedRef.current = true;
+      setOpen(false);
     } else {
-      // Fallback (no pre-opened tab): only works from a direct click.
-      window.open(liveUrl, "_blank", "noopener,noreferrer");
+      setBlocked(true);
     }
-    setOpen(false);
   }
 
   function cancel() {
     stopTimer();
-    const tab = tabRef.current;
-    tabRef.current = null;
-    if (tab && !tab.closed) tab.close();
     setOpen(false);
   }
 
   function start() {
-    // Open the tab now, while we still have the click, then fill it in later.
-    const tab = window.open("", "_blank");
-    if (tab) {
-      tab.opener = null;
-      try {
-        tab.document.title = `Opening ${title}…`;
-      } catch {
-        /* cross-origin guard; harmless */
-      }
-    }
-    tabRef.current = tab;
-    setBlocked(!tab);
+    openedRef.current = false;
+    setBlocked(false);
     setSecondsLeft(HOLD_SECONDS);
     setOpen(true);
   }
 
-  // Countdown. When it reaches zero: navigate the pre-opened tab, or (if the
-  // tab was blocked) stay on the button so the visitor can open it by clicking.
+  // Countdown; when it reaches zero the project opens.
   useEffect(() => {
     if (!open) return;
     timerRef.current = setInterval(() => {
       setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
-    }, 1000);
+    }, TICK_MS);
     return stopTimer;
   }, [open]);
 
   useEffect(() => {
-    if (!open || secondsLeft > 0) return;
-    if (!blocked) navigateTab();
+    if (open && secondsLeft === 0 && !blocked) finish();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, secondsLeft, blocked]);
+  }, [open, secondsLeft]);
 
   useEffect(() => {
     if (!open) return;
@@ -189,14 +180,15 @@ export function OpenProjectDialog({
               <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} aria-label="Opening the project" className="h-1.5 w-full overflow-hidden rounded-full bg-[#E6EAF1]">
                 <div className="h-1.5 rounded-full bg-brand-accent transition-[width] duration-1000 ease-linear" style={{ width: `${progress}%` }} />
               </div>
-              {blocked && done ? (
+              {blocked ? (
                 <>
-                  <button type="button" onClick={navigateTab} className="flex h-12 w-full items-center justify-center gap-2.5 rounded-3xl bg-brand-accent text-base font-bold text-white hover:bg-brand-accent-hover">
+                  <button type="button" onClick={finish} className="flex h-12 w-full items-center justify-center gap-2.5 rounded-3xl bg-brand-accent text-base font-bold text-white hover:bg-brand-accent-hover">
                     Open project
                     <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" className="fill-none stroke-current" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11.5 4h4.5v4.5M16 4l-6.5 6.5M14 11.5V16H4V6h4.5" /></svg>
                   </button>
                   <div className="text-center text-[13px] text-brand-muted text-pretty">
-                    Your browser blocked the new tab. Click to open the project.
+                    Your browser didn&apos;t let us open the tab automatically.
+                    Click to open the project.
                   </div>
                 </>
               ) : (
@@ -209,7 +201,7 @@ export function OpenProjectDialog({
                     <button type="button" onClick={cancel} className="h-[38px] px-4 font-semibold text-brand-muted">
                       Cancel
                     </button>
-                    <button type="button" onClick={navigateTab} className="h-[38px] rounded-pill bg-brand-ink px-5 text-sm font-bold text-white">
+                    <button type="button" onClick={finish} className="h-[38px] rounded-pill bg-brand-ink px-5 text-sm font-bold text-white">
                       Open now
                     </button>
                   </div>

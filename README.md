@@ -76,9 +76,10 @@ the migrate → seed → reindex → worker steps.
   counts / likes aren't shown (no analytics data model yet).
 - **Milestone 8 — the Open-project flow:** the centre-screen popup
   (`OpenProjectDialog`) with the Learnbay mark, project + student + description
-  stays for 5 seconds and then opens the student's live site in a new tab (the
-  tab is opened during the click and pointed at the project when the countdown
-  ends, with `opener` severed; "Open now" and "Cancel" are available). There is
+  stays for 5 seconds and then opens the student's live site in a new tab
+  (nothing opens before the countdown ends; the tab's `opener` is severed, and
+  if a browser blocks the automatic tab the popup offers an Open button;
+  "Open now" and "Cancel" are available). There is
   no per-click link check any more — link health comes from the daily sweep
   (`worker/link-check.ts`, SSRF-safe via `lib/ssrf.ts`), which records
   `link_checks` rows and the project's link-health flags.
