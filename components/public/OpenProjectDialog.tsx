@@ -3,23 +3,26 @@
 import { useEffect, useRef, useState } from "react";
 import { initials, avatarClasses } from "@/lib/initials";
 
-type Phase = "loading" | "ready" | "slow";
+/** How long the popup stays before the student's project opens in a new tab. */
+const HOLD_SECONDS = 5;
 
-const STATUS: Record<Phase, { text: string; color: string }> = {
-  loading: { text: "Getting the project ready", color: "var(--brand-accent)" },
-  ready: { text: "Your project is ready", color: "#1B6B3C" },
-  slow: { text: "This is taking longer than usual", color: "#8A5A00" },
-};
-
+/**
+ * "Open project": shows a short Learnbay interstitial for HOLD_SECONDS, then
+ * opens the student's live site in a new tab.
+ *
+ * Browsers only let a page open a new tab during a click, so the tab is opened
+ * (blank) in the click handler and pointed at the project when the countdown
+ * ends. Its `opener` is severed so the student's site cannot reach this page.
+ * If a popup blocker refuses the tab, the countdown ends on an "Open project"
+ * button instead, which opens it from a direct click.
+ */
 export function OpenProjectDialog({
-  projectId,
   liveUrl,
   title,
   description,
   studentLabel,
   studentMeta,
 }: {
-  projectId: string;
   liveUrl: string;
   title: string;
   description: string;
@@ -28,64 +31,88 @@ export function OpenProjectDialog({
   studentMeta?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [phase, setPhase] = useState<Phase>("loading");
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(HOLD_SECONDS);
+  const [blocked, setBlocked] = useState(false);
+  const tabRef = useRef<Window | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  function openInNewTab() {
-    window.open(liveUrl, "_blank", "noopener,noreferrer");
+  function stopTimer() {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = null;
+  }
+
+  function navigateTab() {
+    stopTimer();
+    const tab = tabRef.current;
+    tabRef.current = null;
+    if (tab && !tab.closed) {
+      tab.location.href = liveUrl;
+    } else {
+      // Fallback (no pre-opened tab): only works from a direct click.
+      window.open(liveUrl, "_blank", "noopener,noreferrer");
+    }
     setOpen(false);
   }
 
+  function cancel() {
+    stopTimer();
+    const tab = tabRef.current;
+    tabRef.current = null;
+    if (tab && !tab.closed) tab.close();
+    setOpen(false);
+  }
+
+  function start() {
+    // Open the tab now, while we still have the click, then fill it in later.
+    const tab = window.open("", "_blank");
+    if (tab) {
+      tab.opener = null;
+      try {
+        tab.document.title = `Opening ${title}…`;
+      } catch {
+        /* cross-origin guard; harmless */
+      }
+    }
+    tabRef.current = tab;
+    setBlocked(!tab);
+    setSecondsLeft(HOLD_SECONDS);
+    setOpen(true);
+  }
+
+  // Countdown. When it reaches zero: navigate the pre-opened tab, or (if the
+  // tab was blocked) stay on the button so the visitor can open it by clicking.
   useEffect(() => {
     if (!open) return;
-    let cancelled = false;
-    const start = Date.now();
-    setPhase("loading");
+    timerRef.current = setInterval(() => {
+      setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
+    }, 1000);
+    return stopTimer;
+  }, [open]);
 
-    async function tick() {
-      let ok = false;
-      try {
-        const res = await fetch(`/api/projects/${projectId}/check`, {
-          method: "POST",
-        });
-        const data = (await res.json().catch(() => ({}))) as { ok?: boolean };
-        ok = Boolean(data.ok);
-      } catch {
-        ok = false;
-      }
-      if (cancelled) return;
-      if (ok) {
-        setPhase("ready");
-        return; // stop polling once it answers
-      }
-      const elapsed = Date.now() - start;
-      if (elapsed >= 90_000) setPhase("slow");
-      timerRef.current = setTimeout(tick, elapsed >= 90_000 ? 15_000 : 5_000);
-    }
-
-    tick();
-    return () => {
-      cancelled = true;
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [open, projectId]);
+  useEffect(() => {
+    if (!open || secondsLeft > 0) return;
+    if (!blocked) navigateTab();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, secondsLeft, blocked]);
 
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") cancel();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  const status = STATUS[phase];
+  const done = secondsLeft === 0;
+  const progress = ((HOLD_SECONDS - secondsLeft) / HOLD_SECONDS) * 100;
 
   return (
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={start}
         className="flex h-12 flex-shrink-0 items-center gap-2.5 rounded-3xl bg-white px-6 text-base font-bold text-brand-ink"
       >
         Open project
@@ -97,7 +124,7 @@ export function OpenProjectDialog({
       {open && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-brand-ink/60 p-6"
-          onClick={() => setOpen(false)}
+          onClick={cancel}
         >
           <div
             role="dialog"
@@ -109,7 +136,7 @@ export function OpenProjectDialog({
             <button
               type="button"
               aria-label="Close"
-              onClick={() => setOpen(false)}
+              onClick={cancel}
               className="absolute right-3 top-3 flex h-[38px] w-[38px] items-center justify-center rounded-full bg-[#F1F3F7] text-brand-ink"
             >
               <svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true" className="fill-none stroke-current" strokeWidth="1.6" strokeLinecap="round"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" /></svg>
@@ -118,30 +145,18 @@ export function OpenProjectDialog({
             {/* mark + status */}
             <div className="flex flex-col items-center gap-3.5 px-9 pb-5 pt-8 text-center">
               <div className="relative h-[92px] w-[92px]">
-                {phase === "loading" && (
-                  <>
-                    <div data-lb-anim className="absolute inset-1 rounded-full bg-brand-accent" style={{ animation: "lb-pulse 1.8s ease-out infinite" }} />
-                    <div data-lb-anim className="absolute inset-0 rounded-full border-[3px] border-[#DCE6FA]" style={{ borderTopColor: "var(--brand-accent)", borderRightColor: "var(--brand-accent)", animation: "lb-spin 1.1s linear infinite" }} />
-                  </>
+                {!done && (
+                  <div data-lb-anim className="absolute inset-0 rounded-full border-[3px] border-[#DCE6FA]" style={{ borderTopColor: "var(--brand-accent)", borderRightColor: "var(--brand-accent)", animation: "lb-spin 1.1s linear infinite" }} />
                 )}
-                {phase === "ready" && <div className="absolute inset-0 rounded-full border-[3px] border-state-published" />}
-                {phase === "slow" && <div className="absolute inset-0 rounded-full border-[3px] border-dashed border-[#D99A06]" />}
+                {done && <div className="absolute inset-0 rounded-full border-[3px] border-state-published" />}
                 <div className="absolute left-5 top-5 flex h-[52px] w-[52px] items-center justify-center rounded-[14px] bg-brand-accent text-[28px] font-bold leading-none text-white">
                   L
                 </div>
-                {phase === "ready" && (
-                  <div className="absolute -bottom-1 -right-1 flex h-[30px] w-[30px] items-center justify-center rounded-full border-[3px] border-white bg-state-published">
-                    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" className="fill-none stroke-white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7" /></svg>
-                  </div>
-                )}
-                {phase === "slow" && (
-                  <div className="absolute -bottom-1 -right-1 flex h-[30px] w-[30px] items-center justify-center rounded-full border-[3px] border-white bg-[#FAB219]">
-                    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" className="fill-none stroke-[#3B2A00]" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 4.5V8l2.5 1.5" /></svg>
-                  </div>
-                )}
               </div>
-              <div aria-live="polite" className="text-sm font-bold" style={{ color: status.color }}>
-                {status.text}
+              <div aria-live="polite" className="text-sm font-bold text-brand-accent">
+                {done
+                  ? "Opening the project in a new tab"
+                  : `Opening the project in ${secondsLeft}…`}
               </div>
               <div className="flex flex-col items-center gap-2">
                 <h2 id="open-title" className="m-0 text-2xl font-bold leading-tight tracking-tight">
@@ -170,51 +185,37 @@ export function OpenProjectDialog({
               </div>
             </div>
 
-            {phase === "loading" && (
-              <div className="flex flex-col items-center gap-3 px-9 pb-6 pt-5">
-                <div role="progressbar" aria-label="Getting the project ready" className="h-1.5 w-full overflow-hidden rounded-full bg-[#E6EAF1]">
-                  <div data-lb-anim className="h-1.5 w-[28%] rounded-full bg-brand-accent" style={{ animation: "lb-slide 1.5s ease-in-out infinite" }} />
-                </div>
-                <div className="text-center text-[13px] text-brand-muted text-pretty">
-                  Waking the project up on the student&apos;s hosting. This
-                  usually takes a few seconds and can take up to a minute.
-                </div>
-                <button type="button" onClick={() => setOpen(false)} className="h-[38px] px-4 font-semibold text-brand-muted">
-                  Cancel
-                </button>
+            <div className="flex flex-col items-center gap-3 px-9 pb-6 pt-5">
+              <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} aria-label="Opening the project" className="h-1.5 w-full overflow-hidden rounded-full bg-[#E6EAF1]">
+                <div className="h-1.5 rounded-full bg-brand-accent transition-[width] duration-1000 ease-linear" style={{ width: `${progress}%` }} />
               </div>
-            )}
-
-            {phase === "ready" && (
-              <div className="flex flex-col items-center gap-2.5 px-9 pb-6 pt-5">
-                <button type="button" onClick={openInNewTab} className="flex h-12 w-full items-center justify-center gap-2.5 rounded-3xl bg-brand-accent text-base font-bold text-white hover:bg-brand-accent-hover">
-                  Open project
-                  <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" className="fill-none stroke-current" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11.5 4h4.5v4.5M16 4l-6.5 6.5M14 11.5V16H4V6h4.5" /></svg>
-                </button>
-                <div className="text-center text-[13px] text-brand-muted">
-                  Opens in a new tab. This Learnbay page stays open.
-                </div>
-              </div>
-            )}
-
-            {phase === "slow" && (
-              <div className="flex flex-col gap-3.5 px-9 pb-6 pt-4">
-                <div className="text-center text-[13px] text-brand-ink-soft text-pretty">
-                  The project has not answered after 90 seconds. Learnbay is
-                  still trying. You can open it now, but it may show a loading or
-                  error page.
-                </div>
-                <div className="flex items-center justify-center gap-3">
-                  <button type="button" onClick={() => setOpen(false)} className="h-[46px] rounded-[23px] border border-line-input bg-white px-5 font-semibold text-brand-ink">
-                    Close
+              {blocked && done ? (
+                <>
+                  <button type="button" onClick={navigateTab} className="flex h-12 w-full items-center justify-center gap-2.5 rounded-3xl bg-brand-accent text-base font-bold text-white hover:bg-brand-accent-hover">
+                    Open project
+                    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" className="fill-none stroke-current" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11.5 4h4.5v4.5M16 4l-6.5 6.5M14 11.5V16H4V6h4.5" /></svg>
                   </button>
-                  <button type="button" onClick={openInNewTab} className="flex h-[46px] items-center gap-2.5 rounded-[23px] bg-brand-ink px-6 font-bold text-white">
-                    Open anyway
-                    <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true" className="fill-none stroke-current" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11.5 4h4.5v4.5M16 4l-6.5 6.5M14 11.5V16H4V6h4.5" /></svg>
-                  </button>
-                </div>
-              </div>
-            )}
+                  <div className="text-center text-[13px] text-brand-muted text-pretty">
+                    Your browser blocked the new tab. Click to open the project.
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-center text-[13px] text-brand-muted text-pretty">
+                    The project runs on the student&apos;s own hosting and opens in a
+                    new tab. This Learnbay page stays open.
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button type="button" onClick={cancel} className="h-[38px] px-4 font-semibold text-brand-muted">
+                      Cancel
+                    </button>
+                    <button type="button" onClick={navigateTab} className="h-[38px] rounded-pill bg-brand-ink px-5 text-sm font-bold text-white">
+                      Open now
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
 
             <div className="flex items-center justify-between gap-3 border-t border-line bg-surface-canvas px-5 py-3">
               <div className="flex items-center gap-2">

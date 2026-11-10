@@ -271,9 +271,8 @@ export default async function DashboardPage({
             })}
 
             <p className="text-[13px] text-brand-muted text-pretty">
-              Learnbay tries every published link once a day, and each time a
-              visitor opens a project. Working links are not listed here. (The
-              daily checker is built in the link-checker milestone.)
+              Learnbay tries every published link once a day. Working links are
+              not listed here.
             </p>
           </>
         )}

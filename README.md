@@ -75,12 +75,13 @@ the migrate → seed → reindex → worker steps.
   in a new tab for now — the loading popup is the next milestone. View
   counts / likes aren't shown (no analytics data model yet).
 - **Milestone 8 — the Open-project flow:** the centre-screen popup
-  (`OpenProjectDialog`) with the animated Learnbay mark, project + student +
-  description. It polls `POST /api/projects/[id]/check`, which runs an
-  (interim) SSRF-safe check (`lib/ssrf.ts`: https-only, blocks IP literals /
-  localhost / metadata / private ranges, timeout, no redirect-follow), records
-  a `link_checks` row, and updates the project's link-health flags. Ready state
-  opens the project in a new tab; after 90 s it offers Open-anyway / Close.
+  (`OpenProjectDialog`) with the Learnbay mark, project + student + description
+  stays for 5 seconds and then opens the student's live site in a new tab (the
+  tab is opened during the click and pointed at the project when the countdown
+  ends, with `opener` severed; "Open now" and "Cancel" are available). There is
+  no per-click link check any more — link health comes from the daily sweep
+  (`worker/link-check.ts`, SSRF-safe via `lib/ssrf.ts`), which records
+  `link_checks` rows and the project's link-health flags.
 - **Milestone 9 — certificate uploads with safeguards:** real upload on Profile
   Setup (`CertificateManager`). The pipeline (`lib/certificates.ts`) verifies
   the true type by magic bytes (`lib/fileType.ts`; PDF/PNG/JPG only), caps size

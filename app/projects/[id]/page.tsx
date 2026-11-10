@@ -97,7 +97,6 @@ export default async function PublicProjectPage({
           )}
           <div className="mt-2 flex flex-wrap items-center gap-4">
             <OpenProjectDialog
-              projectId={project.id}
               liveUrl={project.liveUrl}
               title={project.title}
               description={project.description}

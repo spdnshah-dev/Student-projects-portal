@@ -41,7 +41,7 @@ export default async function AdminLinksPage() {
           <h1 className="m-0 text-2xl font-bold tracking-tight">Link problems</h1>
           <p className="m-0 text-sm text-brand-muted">
             Published project links that are not working right now, across all
-            students. Checked once a day and each time a visitor opens a project.
+            students. Checked once a day by the link checker.
           </p>
         </div>
 
